@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TicketActive — Gestor de Tickets</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root {
+    --mint:#3dd9a4; --mint-light:#b8f0dc; --mint-pale:#e8faf4;
+    --sky:#5bcfec;  --sky-light:#b8edf8;  --sky-pale:#e8f7fd;
+    --teal:#1aa57a; --deep:#0d3d2e;
+    --white:#fff; --gray-100:#eef9f5; --gray-200:#d4ede6; --gray-400:#7ab5a0;
+    --text:#0d2e25; --text-soft:#3d6558;
+    --shadow:0 4px 24px rgba(61,217,164,.12);
+    --shadow-lg:0 8px 40px rgba(61,217,164,.18);
+    --radius:16px; --radius-sm:10px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#e8faf4,#e8f7fd 50%,#f0fbf7);min-height:100vh;color:var(--text);}
+  header{background:linear-gradient(135deg,var(--deep),#0a4a38 60%,#084060);padding:0 32px;height:70px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 20px rgba(0,0,0,.3);position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
+  .logo-dot{color:var(--mint);}
+  .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--mint),var(--sky));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+  .user-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:6px 14px 6px 8px;color:rgba(255,255,255,.85);font-size:.85rem;font-weight:500;}
+  .user-avatar{width:28px;height:28px;background:linear-gradient(135deg,var(--mint),var(--sky));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;}
+  .role-tag{background:linear-gradient(90deg,var(--mint),var(--sky));color:var(--deep);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;}
+  .app-wrapper{display:flex;min-height:calc(100vh - 70px);}
+  .sidebar{width:240px;flex-shrink:0;background:rgba(255,255,255,.7);backdrop-filter:blur(20px);border-right:1px solid var(--gray-200);padding:24px 16px;display:flex;flex-direction:column;gap:6px;}
+  .sidebar-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--gray-400);padding:0 8px;margin-bottom:8px;margin-top:4px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:.9rem;font-weight:500;color:var(--text-soft);transition:all .2s;border:none;background:none;width:100%;text-align:left;}
+  .nav-item:hover{background:var(--mint-pale);color:var(--teal);}
+  .nav-item.active{background:linear-gradient(135deg,var(--mint-pale),var(--sky-pale));color:var(--teal);font-weight:600;box-shadow:0 2px 8px rgba(61,217,164,.15);}
+  .nav-icon{font-size:1.1rem;min-width:22px;text-align:center;}
+  .nav-badge{margin-left:auto;background:linear-gradient(135deg,var(--mint),var(--sky));color:var(--deep);font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:12px;min-width:20px;text-align:center;}
+  .sidebar-sep{height:1px;background:var(--gray-200);margin:8px 0;}
+  .main-content{flex:1;padding:32px;overflow-y:auto;}
+  .page{display:none;}
+  .page.active{display:block;animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+  .page-title{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--deep);letter-spacing:-.5px;}
+  .page-subtitle{color:var(--text-soft);font-size:.9rem;margin-top:2px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+  .btn-primary{background:linear-gradient(135deg,var(--mint),var(--sky));color:var(--deep);box-shadow:0 4px 16px rgba(61,217,164,.35);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(61,217,164,.45);}
+  .btn-secondary{background:#fff;color:var(--teal);border:1.5px solid var(--mint);}
+  .btn-secondary:hover{background:var(--mint-pale);}
+  .btn-danger{background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;}
+  .btn-danger:hover{background:#fecaca;}
+  .btn-sm{padding:6px 12px;font-size:.8rem;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
+  .card{background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.9);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
+  .card-header{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:var(--deep);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+  .stat-card{background:rgba(255,255,255,.85);border-radius:var(--radius);padding:20px;border:1px solid var(--gray-200);box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .stat-card.c1::before{background:linear-gradient(90deg,var(--mint),var(--sky));}
+  .stat-card.c2::before{background:linear-gradient(90deg,var(--sky),#a78bfa);}
+  .stat-card.c3::before{background:linear-gradient(90deg,#fbbf24,#f97316);}
+  .stat-card.c4::before{background:linear-gradient(90deg,#34d399,#059669);}
+  .stat-label{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-400);}
+  .stat-value{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--deep);margin-top:4px;}
+  .stat-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:1.8rem;opacity:.15;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.full{grid-column:1/-1;}
+  label{font-size:.83rem;font-weight:600;color:var(--text-soft);}
+  input,select,textarea{padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(61,217,164,.15);}
+  textarea{resize:vertical;min-height:90px;}
+  .table-wrap{overflow-x:auto;border-radius:var(--radius-sm);}
+  table{width:100%;border-collapse:collapse;font-size:.875rem;}
+  thead tr{background:linear-gradient(135deg,var(--deep),#0a4a38);}
+  thead th{padding:12px 16px;text-align:left;color:rgba(255,255,255,.85);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--gray-100);transition:background .15s;}
+  tbody tr:hover{background:var(--mint-pale);}
+  tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;}
+  .badge-open{background:#dbeafe;color:#1d4ed8;}
+  .badge-progress{background:linear-gradient(90deg,#dcfce7,#d1fae5);color:#166534;}
+  .badge-closed{background:#f3f4f6;color:#6b7280;}
+  .badge-urgent{background:#fee2e2;color:#dc2626;}
+  .badge-high{background:#fef3c7;color:#92400e;}
+  .badge-medium{background:var(--sky-pale);color:#0369a1;}
+  .badge-low{background:var(--mint-pale);color:var(--teal);}
+  .filters-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;}
+  .filters-row input,.filters-row select{padding:8px 12px;font-size:.85rem;min-width:140px;}
+  .guests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .guest-card{background:rgba(255,255,255,.85);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px;position:relative;box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s;}
+  .guest-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+  .guest-card-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .guest-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sky));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--deep);flex-shrink:0;}
+  .guest-name{font-weight:700;color:var(--deep);font-size:.95rem;}
+  .guest-email{font-size:.8rem;color:var(--text-soft);margin-top:2px;}
+  .guest-link-box{background:var(--gray-100);border:1px dashed var(--gray-200);border-radius:var(--radius-sm);padding:10px 12px;font-size:.78rem;color:var(--text-soft);word-break:break-all;font-family:monospace;margin-bottom:12px;cursor:pointer;transition:background .2s;}
+  .guest-link-box:hover{background:var(--mint-pale);}
+  .guest-actions{display:flex;gap:8px;justify-content:flex-end;}
+  .guest-status{position:absolute;top:16px;right:16px;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:12px;}
+  .status-active{background:var(--mint-pale);color:var(--teal);}
+  .status-inactive{background:#f3f4f6;color:#6b7280;}
+
+  /* ─── EMAIL CONFIG ─── */
+  .email-config-card{background:linear-gradient(135deg,rgba(13,61,46,.95),rgba(8,64,96,.9));border-radius:var(--radius);padding:28px;color:#fff;margin-bottom:24px;position:relative;overflow:hidden;}
+  .email-config-card::before{content:'✉️';position:absolute;right:24px;top:50%;transform:translateY(-50%);font-size:5rem;opacity:.06;}
+  .email-config-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:6px;}
+  .email-config-sub{font-size:.85rem;opacity:.75;margin-bottom:20px;line-height:1.5;}
+  .email-config-card label{color:rgba(255,255,255,.8);font-size:.78rem;}
+  .email-config-card input,.email-config-card select{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;}
+  .email-config-card input:focus,.email-config-card select:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(61,217,164,.2);}
+  .email-config-card input::placeholder{color:rgba(255,255,255,.4);}
+  .config-status{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:5px 12px;border-radius:20px;margin-top:12px;}
+  .config-ok{background:rgba(61,217,164,.2);color:var(--mint);}
+  .config-warn{background:rgba(251,191,36,.2);color:#fbbf24;}
+
+  /* ─── RECIPIENTS ─── */
+  .recipients-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .recipient-item{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;}
+  .recipient-item input{flex:1;background:transparent;border:none;color:#fff;font-size:.85rem;padding:0;min-width:0;}
+  .recipient-item input:focus{box-shadow:none;border:none;background:transparent;}
+  .recipient-item input::placeholder{color:rgba(255,255,255,.35);}
+  .remove-rec-btn{background:rgba(239,68,68,.25);border:none;color:#ef4444;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .remove-rec-btn:hover{background:rgba(239,68,68,.45);}
+  .add-rec-btn{background:rgba(255,255,255,.08);border:1.5px dashed rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .2s;width:100%;margin-top:6px;font-family:'DM Sans',sans-serif;}
+  .add-rec-btn:hover{background:rgba(255,255,255,.14);}
+
+  /* ─── EMAIL LOG ─── */
+  .email-log{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+  .log-item{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;padding:7px 10px;border-radius:6px;line-height:1.4;}
+  .log-ok{background:#dcfce7;color:#166534;}
+  .log-fail{background:#fee2e2;color:#dc2626;}
+  .log-info{background:var(--sky-pale);color:#0369a1;}
+  .log-time{opacity:.6;min-width:64px;font-size:.75rem;flex-shrink:0;padding-top:1px;}
+
+  /* ─── VARS BOX ─── */
+  .vars-box{background:var(--gray-100);border-radius:10px;padding:16px;font-family:monospace;font-size:.82rem;line-height:2;color:var(--deep);}
+  .vars-box span{color:var(--teal);font-weight:700;}
+
+  /* ─── EMAIL PREVIEW ─── */
+  .email-preview{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-top:16px;}
+  .email-preview-head{background:var(--deep);color:#fff;padding:10px 16px;font-size:.78rem;display:flex;align-items:center;gap:6px;}
+  .email-preview-body{padding:20px;font-size:.88rem;color:#374151;line-height:1.7;}
+  .ep-row{display:flex;gap:8px;margin-bottom:7px;}
+  .ep-label{font-weight:700;color:var(--teal);min-width:90px;font-size:.82rem;flex-shrink:0;}
+
+  /* ─── SPINNER ─── */
+  .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(13,61,46,.3);border-top-color:var(--deep);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ─── MODAL ─── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(13,46,37,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:#fff;border-radius:var(--radius);padding:32px;width:100%;max-width:560px;box-shadow:0 24px 80px rgba(0,0,0,.18);transform:translateY(20px);transition:transform .3s;max-height:90vh;overflow-y:auto;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-title{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--deep);margin-bottom:20px;}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
+
+  /* ─── TOAST ─── */
+  #toast{position:fixed;bottom:28px;right:28px;background:var(--deep);color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:.88rem;font-weight:500;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;transform:translateY(80px);opacity:0;transition:all .3s;z-index:300;max-width:360px;}
+  #toast.show{transform:translateY(0);opacity:1;}
+
+  .guest-banner{background:linear-gradient(135deg,var(--mint),var(--sky));color:var(--deep);padding:10px 32px;display:flex;align-items:center;gap:12px;font-size:.88rem;font-weight:600;}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text-soft);}
+  .empty-state .empty-icon{font-size:3rem;margin-bottom:12px;opacity:.5;}
+  .empty-state p{font-size:.95rem;}
+  .divider{height:1px;background:var(--gray-200);margin:20px 0;}
+  @media(max-width:768px){.sidebar{display:none}.main-content{padding:16px}.form-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-icon">🚨</div>Ticket<span class="logo-dot">Active</span></div>
+  <div class="user-badge">
+    <div class="user-avatar" id="headerInitial">AD</div>
+    <span id="headerUserName">Administrador</span>
+    <span class="role-tag" id="headerRole">Admin</span>
+  </div>
+</header>
+
+<div class="guest-banner" id="guestBanner" style="display:none">
+  🎫 <strong>Modo Invitado:</strong> Podés crear tickets. Para más opciones contactá al administrador.
+</div>
+
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebarEl">
+    <div class="sidebar-title">Principal</div>
+    <button class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
+    <button class="nav-item" onclick="showPage('tickets')"><span class="nav-icon">🎫</span> Tickets <span class="nav-badge" id="badgeCount">0</span></button>
+    <button class="nav-item" onclick="showPage('crear')"><span class="nav-icon">➕</span> Crear Ticket</button>
+    <div id="adminNav">
+      <div class="sidebar-sep"></div>
+      <div class="sidebar-title">Administración</div>
+      <button class="nav-item" onclick="showPage('accesos')"><span class="nav-icon">👥</span> Invitados <span class="nav-badge" id="badgeGuests">0</span></button>
+      <button class="nav-item" onclick="showPage('correo')"><span class="nav-icon">✉️</span> Notificaciones</button>
+      <button class="nav-item" onclick="showPage('exportar')"><span class="nav-icon">📥</span> Exportar</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div><div class="page-title">Dashboard</div><div class="page-subtitle">Resumen general del sistema</div></div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card c1"><div class="stat-label">Total Tickets</div><div class="stat-value" id="statTotal">0</div><div class="stat-icon">🎫</div></div>
+        <div class="stat-card c2"><div class="stat-label">Abiertos</div><div class="stat-value" id="statOpen">0</div><div class="stat-icon">📂</div></div>
+        <div class="stat-card c3"><div class="stat-label">En Progreso</div><div class="stat-value" id="statProgress">0</div><div class="stat-icon">⚙️</div></div>
+        <div class="stat-card c4"><div class="stat-label">Cerrados</div><div class="stat-value" id="statClosed">0</div><div class="stat-icon">✅</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">🕐 Tickets Recientes</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Título</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <tbody id="recentBody"><tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div><p>Aún no hay tickets</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA TICKETS -->
+    <div class="page" id="page-tickets">
+      <div class="page-header">
+        <div><div class="page-title">Todos los Tickets</div><div class="page-subtitle">Gestioná y filtrá los tickets</div></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-secondary" onclick="showPage('crear')">➕ Nuevo</button>
+          <button class="btn btn-primary" id="exportBtnList" onclick="exportExcel()">📥 Exportar</button>
+        </div>
+      </div>
+      <div class="filters-row">
+        <input type="text" id="filterSearch" placeholder="🔍 Buscar..." oninput="renderTickets()">
+        <select id="filterStatus" onchange="renderTickets()"><option value="">Todos los estados</option><option>Abierto</option><option>En Progreso</option><option>Cerrado</option></select>
+        <select id="filterPriority" onchange="renderTickets()"><option value="">Todas las prioridades</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Título</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Solicitante</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="ticketsBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREAR TICKET -->
+    <div class="page" id="page-crear">
+      <div class="page-header">
+        <div><div class="page-title">Crear Ticket</div><div class="page-subtitle">Completá el formulario para registrar un nuevo ticket</div></div>
+      </div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="form-group full"><label>Título del Ticket *</label><input type="text" id="tTitulo" placeholder="Describí el problema brevemente"></div>
+          <div class="form-group full"><label>Descripción *</label><textarea id="tDesc" placeholder="Detallá el problema, pasos, contexto..."></textarea></div>
+          <div class="form-group"><label>Categoría *</label>
+            <select id="tCategoria">
+              <option value="">Seleccioná una categoría</option>
+              <option>Soporte Técnico CCTV</option><option>Creación de Usuarios de Alarma</option><option>Error de Sistema de CCTV</option>
+              <option>Consulta General</option><option>Solicitud de Investigación</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Prioridad *</label>
+            <select id="tPrioridad"><option value="">Seleccioná prioridad</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+          </div>
+          <div class="form-group"><label>Nombre / Solicitante *</label><input type="text" id="tSolicitante" placeholder="Tu nombre completo"></div>
+          <div class="form-group"><label>Email de contacto *</label><input type="email" id="tEmail" placeholder="correo@ejemplo.com"></div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div id="emailStatusHint" style="font-size:.82rem;color:var(--text-soft)"></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-secondary" onclick="clearForm()">🗑️ Limpiar</button>
+            <button class="btn btn-primary" id="createBtn" onclick="crearTicket()">✅ Crear Ticket</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVITADOS -->
+    <div class="page" id="page-accesos">
+      <div class="page-header">
+        <div><div class="page-title">Gestión de Invitados</div><div class="page-subtitle">Invitá usuarios para que puedan crear tickets</div></div>
+        <button class="btn btn-primary" onclick="openModal('modalInvitado')">👤 Nuevo Invitado</button>
+      </div>
+      <div id="guestsContainer"><div class="empty-state"><div class="empty-icon">👥</div><p>No hay invitados. Agregá uno con el botón de arriba.</p></div></div>
+    </div>
+
+    <!-- ✉️ NOTIFICACIONES POR EMAIL -->
+    <div class="page" id="page-correo">
+      <div class="page-header">
+        <div><div class="page-title">Notificaciones por Email</div><div class="page-subtitle">Configurá quién recibe correos al crear un ticket</div></div>
+      </div>
+
+      <!-- SETUP -->
+      <div class="email-config-card">
+        <div class="email-config-title">⚙️ Configuración EmailJS</div>
+        <div class="email-config-sub">
+          EmailJS envía correos directamente desde el navegador, sin necesidad de servidor.<br>
+          Registrate gratis en <strong style="color:var(--mint)">emailjs.com</strong> → creá un servicio → creá una plantilla → pegá los IDs aquí.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <a href="https://dashboard.emailjs.com/sign-up" target="_blank"
+            style="color:var(--mint);font-size:.85rem;font-weight:600;text-decoration:underline">
+            📖 Crear cuenta gratuita en EmailJS →
+          </a>
+        </div>
+
+        <div class="form-grid" style="gap:12px">
+          <div class="form-group">
+            <label>Public Key</label>
+            <input type="text" id="cfgPublicKey" placeholder="Ej: abc123XYZ_..." oninput="saveEmailConfig()">
+          </div>
+          <div class="form-group">
+            <label>Service ID</label>
+            <input type="text" id="cfgServiceId" placeholder="Ej: service_xxxxxx" oninput="saveEmailConfig()">
+          </div>
+          <div class="form-group full">
+            <label>Template ID</label>
+            <input type="text" id="cfgTemplateId" placeholder="Ej: template_xxxxxx" oninput="saveEmailConfig()">
+          </div>
+        </div>
+
+        <div id="cfgStatus" class="config-status config-warn">⚠️ Configuración incompleta — correos desactivados</div>
+
+        <div style="margin-top:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <input type="email" id="testEmailAddr" placeholder="tu@email.com (para prueba)"
+            style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:8px 12px;width:240px;font-size:.85rem;font-family:'DM Sans',sans-serif;">
+          <button class="btn btn-primary btn-sm" onclick="testEmail()" id="testBtn">📧 Enviar Correo de Prueba</button>
+        </div>
+
+        <div class="divider" style="border-color:rgba(255,255,255,.1);margin:20px 0"></div>
+
+        <!-- RECIPIENTS -->
+        <div class="email-config-title" style="font-size:.95rem;margin-bottom:6px">👥 Destinatarios adicionales (grupo de notificación)</div>
+        <p style="font-size:.83rem;opacity:.7;margin-bottom:8px">
+          Estas personas recibirán cada notificación de ticket nuevo. El solicitante siempre recibe su correo de confirmación.
+        </p>
+        <div class="recipients-list" id="recipientsList"></div>
+        <button class="add-rec-btn" onclick="addRecipient()">＋ Agregar destinatario</button>
+        <div style="margin-top:12px">
+          <button class="btn btn-primary btn-sm" onclick="saveRecipients()">💾 Guardar destinatarios</button>
+        </div>
+      </div>
+
+      <!-- VARIABLES -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">📋 Variables disponibles para la plantilla EmailJS</div>
+        <p style="font-size:.85rem;color:var(--text-soft);margin-bottom:14px">Usá estas variables al diseñar tu plantilla en el panel de EmailJS:</p>
+        <div class="vars-box">
+          <div><span>{{to_email}}</span> — Correo del destinatario</div>
+          <div><span>{{to_name}}</span> — Nombre del destinatario</div>
+          <div><span>{{ticket_id}}</span> — Número de ticket (ej: #0042)</div>
+          <div><span>{{ticket_title}}</span> — Título del ticket</div>
+          <div><span>{{ticket_desc}}</span> — Descripción completa</div>
+          <div><span>{{ticket_category}}</span> — Categoría</div>
+          <div><span>{{ticket_priority}}</span> — Prioridad</div>
+          <div><span>{{ticket_status}}</span> — Estado</div>
+          <div><span>{{requester_name}}</span> — Nombre del solicitante</div>
+          <div><span>{{requester_email}}</span> — Email del solicitante</div>
+          <div><span>{{ticket_date}}</span> — Fecha de creación</div>
+          <div><span>{{email_type}}</span> — "confirmation" o "notification"</div>
+        </div>
+
+        <div class="email-preview">
+          <div class="email-preview-head">📧 Ejemplo visual del correo</div>
+          <div class="email-preview-body">
+            <div style="font-size:1.1rem;font-weight:700;color:var(--deep);margin-bottom:14px">🎫 Ticket #0042 creado correctamente</div>
+            <div class="ep-row"><span class="ep-label">Título:</span><span>Error al generar factura mensual</span></div>
+            <div class="ep-row"><span class="ep-label">Categoría:</span><span>Facturación</span></div>
+            <div class="ep-row"><span class="ep-label">Prioridad:</span><span>Alta</span></div>
+            <div class="ep-row"><span class="ep-label">Estado:</span><span>Abierto</span></div>
+            <div class="ep-row"><span class="ep-label">Solicitante:</span><span>Ana García (ana@empresa.com)</span></div>
+            <div class="ep-row"><span class="ep-label">Fecha:</span><span>28/3/2026, 10:15</span></div>
+            <hr style="margin:14px 0;border:none;border-top:1px solid #e5e7eb">
+            <div style="font-size:.82rem;color:#9ca3af">Este es un mensaje automático de TicketActive. No respondas este correo.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="card">
+        <div class="card-header">📜 Log de envíos</div>
+        <div class="email-log" id="emailLog"><div class="log-item log-info"><span class="log-time">--:--</span><span>Aquí aparecerán los registros de correos enviados</span></div></div>
+        <div style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="clearLog()">🗑️ Limpiar log</button></div>
+      </div>
+    </div>
+
+    <!-- EXPORTAR -->
+    <div class="page" id="page-exportar">
+      <div class="page-header">
+        <div><div class="page-title">Exportar a Excel</div><div class="page-subtitle">Descargá los tickets en formato .xlsx</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">📊 Opciones de exportación</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Estado</label><select id="expStatus"><option value="">Todos</option><option>Abierto</option><option>En Progreso</option><option>Cerrado</option></select></div>
+          <div class="form-group"><label>Prioridad</label><select id="expPriority"><option value="">Todas</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select></div>
+          <div class="form-group"><label>Fecha desde</label><input type="date" id="expFrom"></div>
+          <div class="form-group"><label>Fecha hasta</label><input type="date" id="expTo"></div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn btn-secondary" onclick="previewExport()">👁️ Vista previa</button>
+          <button class="btn btn-primary" onclick="exportExcelFiltered()">📥 Descargar Excel</button>
+        </div>
+      </div>
+      <div id="previewSection" style="display:none;margin-top:20px">
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Título</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Solicitante</th><th>Email</th><th>Fecha</th></tr></thead>
+            <tbody id="previewBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal">
+    <div class="modal-title">📋 Detalle del Ticket</div>
+    <div id="detalleContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDetalle')">Cerrar</button>
+      <button class="btn btn-primary" id="saveEditBtn" onclick="saveEdit()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INVITADO -->
+<div class="modal-overlay" id="modalInvitado">
+  <div class="modal">
+    <div class="modal-title">👤 Agregar Invitado</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group"><label>Nombre completo *</label><input type="text" id="gNombre" placeholder="Ej: María López"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="gEmail" placeholder="maria@empresa.com"></div>
+      <div class="form-group"><label>Nota (opcional)</label><input type="text" id="gNota" placeholder="Ej: Área de Ventas"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalInvitado')">Cancelar</button>
+      <button class="btn btn-primary" onclick="agregarInvitado()">✅ Generar Acceso</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LINK -->
+<div class="modal-overlay" id="modalLink">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">🔗 Enlace de Acceso Generado</div>
+    <p style="color:var(--text-soft);font-size:.9rem;margin-bottom:16px">Compartí este enlace. El invitado solo podrá crear tickets.</p>
+    <div class="guest-link-box" id="generatedLink" onclick="copyLink()"></div>
+    <p style="font-size:.78rem;color:var(--gray-400)">Clic en el cuadro para copiar</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="copyLink()">📋 Copiar</button>
+      <button class="btn btn-primary" onclick="closeModal('modalLink')">Listo</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════ STATE ═══════════════
+let tickets = JSON.parse(localStorage.getItem('tf_tickets') || '[]');
+let guests  = JSON.parse(localStorage.getItem('tf_guests')  || '[]');
+let ticketCounter = parseInt(localStorage.getItem('tf_counter') || '0');
+let currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
+let editingId = null;
+
+let emailCfg = JSON.parse(localStorage.getItem('tf_emailcfg') || '{}');
+let emailRecipients = JSON.parse(localStorage.getItem('tf_recipients') || '[]');
+let emailLog = JSON.parse(localStorage.getItem('tf_emaillog') || '[]');
+
+// ═══════════════ GUEST MODE ═══════════════
+const urlParams = new URLSearchParams(window.location.search);
+const guestToken = urlParams.get('guest');
+if (guestToken) {
+  const found = guests.find(g => g.token === guestToken && g.active);
+  if (found) {
+    currentUser = { name: found.name, role: 'guest', email: found.email };
+    document.getElementById('guestBanner').style.display = 'flex';
+    document.getElementById('adminNav').style.display = 'none';
+    document.getElementById('exportBtnList').style.display = 'none';
+    document.getElementById('headerInitial').textContent = initials(found.name);
+    document.getElementById('headerUserName').textContent = found.name;
+    document.getElementById('headerRole').textContent = 'Invitado';
+    document.getElementById('headerRole').style.background = 'linear-gradient(90deg,var(--sky),#a78bfa)';
+    document.getElementById('tSolicitante').value = found.name;
+    document.getElementById('tEmail').value = found.email;
+    showPage('crear');
+  } else {
+    const b = document.getElementById('guestBanner');
+    b.style.display = 'flex'; b.style.background = '#fee2e2'; b.style.color = '#dc2626';
+    b.innerHTML = '⛔ <strong>Acceso inválido o desactivado.</strong> Solicitá un nuevo enlace al administrador.';
+  }
+} else {
+  document.getElementById('headerInitial').textContent = 'AD';
+}
+
+function initials(n){ return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+// ═══════════════ NAV ═══════════════
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const btn=[...document.querySelectorAll('.nav-item')].find(b=>b.getAttribute('onclick')?.includes("'"+id+"'"));
+  if(btn) btn.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='tickets')   renderTickets();
+  if(id==='accesos')   renderGuests();
+  if(id==='correo')    initEmailPage();
+}
+
+function save(){ localStorage.setItem('tf_tickets',JSON.stringify(tickets)); localStorage.setItem('tf_counter',String(ticketCounter)); updateBadge(); }
+function saveGuests(){ localStorage.setItem('tf_guests',JSON.stringify(guests)); }
+function updateBadge(){ document.getElementById('badgeCount').textContent = tickets.length; }
+
+// ═══════════════ CREATE TICKET ═══════════════
+async function crearTicket(){
+  const titulo    = document.getElementById('tTitulo').value.trim();
+  const desc      = document.getElementById('tDesc').value.trim();
+  const categoria = document.getElementById('tCategoria').value;
+  const prioridad = document.getElementById('tPrioridad').value;
+  const solicit   = document.getElementById('tSolicitante').value.trim() || currentUser.name;
+  const email     = document.getElementById('tEmail').value.trim() || currentUser.email;
+
+  if(!titulo||!desc||!categoria||!prioridad||!solicit||!email){
+    toast('⚠️ Completá todos los campos obligatorios','#f97316'); return;
+  }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    toast('⚠️ Ingresá un email válido','#f97316'); return;
+  }
+
+  ticketCounter++;
+  const t = {
+    id: ticketCounter, titulo, desc, categoria, prioridad, solicit, email,
+    estado: 'Abierto',
+    fecha: new Date().toLocaleString('es-CR',{dateStyle:'short',timeStyle:'short'}),
+    fechaRaw: new Date().toISOString()
+  };
+  tickets.unshift(t);
+  save();
+  clearForm();
+  renderDashboard();
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Procesando...';
+
+  if(isEmailConfigured()){
+    toast('✅ Ticket #'+t.id+' creado — enviando notificaciones...');
+    await sendTicketEmails(t);
+    toast('✅ Ticket #'+t.id+' creado y correos enviados');
+  } else {
+    toast('✅ Ticket #'+t.id+' creado correctamente');
+    addLog('info','ℹ️ Ticket #'+t.id+' creado sin notificación — Email no configurado');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✅ Crear Ticket';
+  if(currentUser.role!=='guest') showPage('tickets');
+}
+
+function clearForm(){
+  ['tTitulo','tDesc','tCategoria','tPrioridad','tSolicitante','tEmail'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.tagName==='SELECT'?el.selectedIndex=0:(el.value='');
+  });
+  if(currentUser.role==='guest'){
+    document.getElementById('tSolicitante').value=currentUser.name;
+    document.getElementById('tEmail').value=currentUser.email;
+  }
+}
+
+// ═══════════════ EMAIL ═══════════════
+function isEmailConfigured(){
+  return !!(emailCfg.publicKey?.trim() && emailCfg.serviceId?.trim() && emailCfg.templateId?.trim());
+}
+
+function initEmailJS(){
+  if(!emailCfg.publicKey) return false;
+  try{ emailjs.init({ publicKey: emailCfg.publicKey }); return true; }
+  catch(e){ return false; }
+}
+
+function saveEmailConfig(){
+  emailCfg.publicKey  = document.getElementById('cfgPublicKey').value.trim();
+  emailCfg.serviceId  = document.getElementById('cfgServiceId').value.trim();
+  emailCfg.templateId = document.getElementById('cfgTemplateId').value.trim();
+  localStorage.setItem('tf_emailcfg', JSON.stringify(emailCfg));
+  updateCfgStatus();
+  updateCreateHint();
+}
+
+function updateCfgStatus(){
+  const el = document.getElementById('cfgStatus'); if(!el) return;
+  if(isEmailConfigured()){
+    el.className='config-status config-ok';
+    el.textContent='✅ Configuración completa — los correos se enviarán automáticamente';
+  } else {
+    el.className='config-status config-warn';
+    el.textContent='⚠️ Configuración incompleta — correos desactivados';
+  }
+}
+
+function updateCreateHint(){
+  const el = document.getElementById('emailStatusHint'); if(!el) return;
+  if(isEmailConfigured()){
+    const extra = emailRecipients.filter(r=>r.email).length;
+    const total = 1 + extra;
+    el.innerHTML = `✉️ Se enviarán <strong>${total}</strong> correo${total>1?'s':''}: confirmación al solicitante${extra?' + '+extra+' destinatario'+(extra>1?'s adicionales':''):''}`;
+    el.style.color = 'var(--teal)';
+  } else {
+    el.innerHTML = '⚠️ Sin email configurado — <a href="#" onclick="showPage(\'correo\');return false" style="color:var(--teal);font-weight:600">Configurar en Notificaciones</a>';
+    el.style.color = 'var(--text-soft)';
+  }
+}
+
+async function sendTicketEmails(t){
+  if(!initEmailJS()){ addLog('fail','❌ No se pudo inicializar EmailJS — verificá la Public Key'); return; }
+
+  const base = {
+    ticket_id:       '#'+String(t.id).padStart(4,'0'),
+    ticket_title:    t.titulo,
+    ticket_desc:     t.desc,
+    ticket_category: t.categoria,
+    ticket_priority: t.prioridad,
+    ticket_status:   t.estado,
+    requester_name:  t.solicit,
+    requester_email: t.email,
+    ticket_date:     t.fecha,
+  };
+
+  // Correo de confirmación al solicitante
+  await sendOne({ ...base, to_email:t.email, to_name:t.solicit, email_type:'confirmation' },
+    `Confirmación → ${t.solicit} <${t.email}>`);
+
+  // Correos al grupo de destinatarios
+  for(const r of emailRecipients){
+    if(!r.email) continue;
+    await sendOne({ ...base, to_email:r.email, to_name:r.name||r.email, email_type:'notification' },
+      `Notificación → ${r.name||r.email} <${r.email}>`);
+  }
+}
+
+async function sendOne(params, label){
+  try{
+    await emailjs.send(emailCfg.serviceId, emailCfg.templateId, params);
+    addLog('ok', '✅ Enviado — '+label);
+  } catch(err){
+    addLog('fail', '❌ Error — '+label+' — '+(err?.text||err?.message||JSON.stringify(err)));
+  }
+}
+
+async function testEmail(){
+  const addr = document.getElementById('testEmailAddr').value.trim();
+  if(!addr){ toast('Ingresá un email para la prueba','#f97316'); return; }
+  if(!isEmailConfigured()){ toast('⚠️ Completá la configuración primero','#f97316'); return; }
+  if(!initEmailJS()){ toast('❌ No se pudo inicializar EmailJS','#ef4444'); return; }
+
+  const btn = document.getElementById('testBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Enviando...';
+
+  try{
+    await emailjs.send(emailCfg.serviceId, emailCfg.templateId, {
+      to_email:addr, to_name:'Usuario de Prueba',
+      ticket_id:'#0000', ticket_title:'Email de Prueba — TicketActive',
+      ticket_desc:'Este correo verifica que la integración con EmailJS funciona correctamente.',
+      ticket_category:'Test', ticket_priority:'Baja', ticket_status:'Abierto',
+      requester_name:'Sistema TicketActive', requester_email:addr,
+      ticket_date: new Date().toLocaleString('es-CR',{dateStyle:'short',timeStyle:'short'}),
+      email_type:'test'
+    });
+    addLog('ok','✅ Email de prueba enviado a '+addr);
+    toast('✅ Email de prueba enviado correctamente a '+addr);
+  } catch(err){
+    const msg = err?.text||err?.message||JSON.stringify(err);
+    addLog('fail','❌ Error en prueba: '+msg);
+    toast('❌ Error: '+msg,'#ef4444');
+  }
+
+  btn.disabled=false; btn.innerHTML='📧 Enviar Correo de Prueba';
+}
+
+// ═══════════════ RECIPIENTS ═══════════════
+function renderRecipients(){
+  const el = document.getElementById('recipientsList'); if(!el) return;
+  if(!emailRecipients.length){ el.innerHTML=''; return; }
+  el.innerHTML = emailRecipients.map((r,i)=>`
+    <div class="recipient-item">
+      <input type="text"  value="${esc(r.name||'')}"  placeholder="Nombre"  onchange="emailRecipients[${i}].name=this.value"  style="flex:1">
+      <input type="email" value="${esc(r.email||'')}" placeholder="Email *" onchange="emailRecipients[${i}].email=this.value" style="flex:1.4">
+      <button class="remove-rec-btn" onclick="removeRecipient(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addRecipient(){ emailRecipients.push({name:'',email:''}); renderRecipients(); }
+function removeRecipient(i){ emailRecipients.splice(i,1); renderRecipients(); }
+
+function saveRecipients(){
+  const bad = emailRecipients.filter(r=>r.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email));
+  if(bad.length){ toast('⚠️ Hay emails inválidos','#f97316'); return; }
+  emailRecipients = emailRecipients.filter(r=>r.email.trim());
+  localStorage.setItem('tf_recipients', JSON.stringify(emailRecipients));
+  renderRecipients();
+  updateCreateHint();
+  toast('✅ '+emailRecipients.length+' destinatario'+(emailRecipients.length!==1?'s guardados':' guardado'));
+}
+
+// ═══════════════ EMAIL LOG ═══════════════
+function addLog(type, msg){
+  const now = new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  emailLog.unshift({ type, msg, time:now });
+  if(emailLog.length>100) emailLog.pop();
+  localStorage.setItem('tf_emaillog', JSON.stringify(emailLog));
+  renderEmailLog();
+}
+
+function renderEmailLog(){
+  const el=document.getElementById('emailLog'); if(!el) return;
+  if(!emailLog.length){ el.innerHTML='<div class="log-item log-info"><span class="log-time">--:--</span><span>Sin registros aún</span></div>'; return; }
+  el.innerHTML=emailLog.slice(0,40).map(l=>`<div class="log-item log-${l.type}"><span class="log-time">${l.time}</span><span>${esc(l.msg)}</span></div>`).join('');
+}
+
+function clearLog(){ emailLog=[]; localStorage.removeItem('tf_emaillog'); renderEmailLog(); toast('🗑️ Log limpiado'); }
+
+function initEmailPage(){
+  // Load saved values into fields
+  const pk=document.getElementById('cfgPublicKey'); if(pk&&!pk.value) pk.value=emailCfg.publicKey||'';
+  const si=document.getElementById('cfgServiceId'); if(si&&!si.value) si.value=emailCfg.serviceId||'';
+  const ti=document.getElementById('cfgTemplateId'); if(ti&&!ti.value) ti.value=emailCfg.templateId||'';
+  updateCfgStatus();
+  renderRecipients();
+  renderEmailLog();
+}
+
+// ═══════════════ DASHBOARD ═══════════════
+function renderDashboard(){
+  document.getElementById('statTotal').textContent=tickets.length;
+  document.getElementById('statOpen').textContent=tickets.filter(t=>t.estado==='Abierto').length;
+  document.getElementById('statProgress').textContent=tickets.filter(t=>t.estado==='En Progreso').length;
+  document.getElementById('statClosed').textContent=tickets.filter(t=>t.estado==='Cerrado').length;
+  const body=document.getElementById('recentBody');
+  if(!tickets.length){ body.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div><p>Aún no hay tickets</p></div></td></tr>'; return; }
+  body.innerHTML=tickets.slice(0,6).map(t=>`<tr><td><strong>#${t.id}</strong></td><td>${esc(t.titulo)}</td><td>${priBadge(t.prioridad)}</td><td>${staBadge(t.estado)}</td><td style="color:var(--text-soft);font-size:.82rem">${t.fecha}</td></tr>`).join('');
+}
+
+// ═══════════════ TICKETS LIST ═══════════════
+function renderTickets(){
+  updateBadge();
+  const s=document.getElementById('filterSearch').value.toLowerCase();
+  const ef=document.getElementById('filterStatus').value;
+  const pf=document.getElementById('filterPriority').value;
+  const filtered=tickets.filter(t=>(t.titulo.toLowerCase().includes(s)||t.solicit.toLowerCase().includes(s)||String(t.id).includes(s))&&(!ef||t.estado===ef)&&(!pf||t.prioridad===pf));
+  const body=document.getElementById('ticketsBody');
+  if(!filtered.length){ body.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🔍</div><p>No hay tickets que coincidan</p></div></td></tr>'; return; }
+  const isAdmin=currentUser.role==='admin';
+  body.innerHTML=filtered.map(t=>`
+    <tr>
+      <td><strong style="color:var(--teal)">#${t.id}</strong></td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.titulo)}">${esc(t.titulo)}</td>
+      <td><span style="font-size:.82rem;color:var(--text-soft)">${t.categoria}</span></td>
+      <td>${priBadge(t.prioridad)}</td><td>${staBadge(t.estado)}</td>
+      <td style="font-size:.85rem">${esc(t.solicit)}</td>
+      <td style="font-size:.8rem;color:var(--text-soft)">${t.fecha}</td>
+      <td><div style="display:flex;gap:6px">
+        ${isAdmin?`<button class="btn btn-sm btn-secondary" onclick="editTicket(${t.id})">✏️</button>`:''}
+        ${isAdmin?`<button class="btn btn-sm btn-danger" onclick="deleteTicket(${t.id})">🗑️</button>`:''}
+        ${!isAdmin?`<button class="btn btn-sm btn-secondary" onclick="viewTicket(${t.id})">👁️</button>`:''}
+      </div></td>
+    </tr>`).join('');
+}
+
+function editTicket(id){
+  const t=tickets.find(x=>x.id===id); if(!t) return;
+  editingId=id;
+  document.getElementById('detalleContent').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group"><label>Título</label><input id="eT" value="${esc(t.titulo)}"></div>
+      <div class="form-group"><label>Descripción</label><textarea id="eD">${esc(t.desc)}</textarea></div>
+      <div class="form-group"><label>Categoría</label><select id="eC">${['Soporte Técnico','Facturación','Consulta General','Error de Sistema','Solicitud de Feature','Recursos Humanos','Otro'].map(c=>`<option${c===t.categoria?' selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Prioridad</label><select id="eP">${['Urgente','Alta','Media','Baja'].map(p=>`<option${p===t.prioridad?' selected':''}>${p}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Estado</label><select id="eE">${['Abierto','En Progreso','Cerrado'].map(s=>`<option${s===t.estado?' selected':''}>${s}</option>`).join('')}</select></div>
+    </div>`;
+  document.getElementById('saveEditBtn').style.display='';
+  openModal('modalDetalle');
+}
+
+function viewTicket(id){
+  const t=tickets.find(x=>x.id===id); if(!t) return;
+  editingId=null;
+  document.getElementById('detalleContent').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><strong>Ticket #${t.id}</strong>${staBadge(t.estado)}</div>
+    <p style="font-size:1rem;font-weight:600;color:var(--deep)">${esc(t.titulo)}</p>
+    <p style="color:var(--text-soft);margin-top:8px;font-size:.9rem">${esc(t.desc)}</p>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.85rem">
+      <div><strong>Categoría:</strong> ${t.categoria}</div><div><strong>Prioridad:</strong> ${priBadge(t.prioridad)}</div>
+      <div><strong>Solicitante:</strong> ${esc(t.solicit)}</div><div><strong>Email:</strong> ${esc(t.email)}</div>
+      <div><strong>Fecha:</strong> ${t.fecha}</div>
+    </div>`;
+  document.getElementById('saveEditBtn').style.display='none';
+  openModal('modalDetalle');
+}
+
+function saveEdit(){
+  if(!editingId) return;
+  const t=tickets.find(x=>x.id===editingId); if(!t) return;
+  t.titulo=document.getElementById('eT').value.trim()||t.titulo;
+  t.desc=document.getElementById('eD').value.trim()||t.desc;
+  t.categoria=document.getElementById('eC').value;
+  t.prioridad=document.getElementById('eP').value;
+  t.estado=document.getElementById('eE').value;
+  save(); closeModal('modalDetalle'); renderTickets(); renderDashboard(); toast('✅ Ticket actualizado');
+}
+
+function deleteTicket(id){
+  if(!confirm('¿Eliminar el ticket #'+id+'?')) return;
+  tickets=tickets.filter(t=>t.id!==id);
+  save(); renderTickets(); renderDashboard(); toast('🗑️ Ticket eliminado','#ef4444');
+}
+
+// ═══════════════ GUESTS ═══════════════
+function generateToken(){ return 'g_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+
+function agregarInvitado(){
+  const name=document.getElementById('gNombre').value.trim();
+  const email=document.getElementById('gEmail').value.trim();
+  const nota=document.getElementById('gNota').value.trim();
+  if(!name||!email){ toast('⚠️ Nombre y email requeridos','#f97316'); return; }
+  const token=generateToken();
+  guests.push({id:Date.now(),name,email,nota,token,active:true,created:new Date().toLocaleDateString('es-CR')});
+  saveGuests();
+  document.getElementById('badgeGuests').textContent=guests.length;
+  closeModal('modalInvitado');
+  ['gNombre','gEmail','gNota'].forEach(id=>document.getElementById(id).value='');
+  showGuestLink(token);
+  renderGuests();
+}
+
+function showGuestLink(token){
+  const link=window.location.href.split('?')[0]+'?guest='+token;
+  document.getElementById('generatedLink').textContent=link;
+  openModal('modalLink');
+}
+
+function copyLink(){
+  navigator.clipboard.writeText(document.getElementById('generatedLink').textContent)
+    .then(()=>toast('📋 Enlace copiado al portapapeles'));
+}
+
+function toggleGuest(id){
+  const g=guests.find(x=>x.id===id); if(!g) return;
+  g.active=!g.active; saveGuests(); renderGuests();
+  toast(g.active?'✅ Invitado activado':'⛔ Invitado desactivado');
+}
+
+function deleteGuest(id){
+  if(!confirm('¿Eliminar este invitado?')) return;
+  guests=guests.filter(g=>g.id!==id); saveGuests(); renderGuests();
+  document.getElementById('badgeGuests').textContent=guests.length;
+  toast('🗑️ Invitado eliminado','#ef4444');
+}
+
+function renderGuests(){
+  document.getElementById('badgeGuests').textContent=guests.length;
+  const c=document.getElementById('guestsContainer');
+  if(!guests.length){ c.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><p>No hay invitados. Agregá uno con el botón de arriba.</p></div>'; return; }
+  c.innerHTML='<div class="guests-grid">'+guests.map(g=>`
+    <div class="guest-card">
+      <span class="guest-status ${g.active?'status-active':'status-inactive'}">${g.active?'● Activo':'○ Inactivo'}</span>
+      <div class="guest-card-top">
+        <div class="guest-avatar">${initials(g.name)}</div>
+        <div><div class="guest-name">${esc(g.name)}</div><div class="guest-email">${esc(g.email)}</div>${g.nota?`<div class="guest-email" style="font-style:italic;margin-top:2px">${esc(g.nota)}</div>`:''}</div>
+      </div>
+      <div class="guest-link-box" onclick="showGuestLink('${g.token}')">🔗 Ver enlace de acceso</div>
+      <div style="font-size:.78rem;color:var(--gray-400);margin-bottom:10px">Creado: ${g.created}</div>
+      <div class="guest-actions">
+        <button class="btn btn-sm btn-secondary" onclick="showGuestLink('${g.token}')">🔗 Enlace</button>
+        <button class="btn btn-sm ${g.active?'btn-secondary':'btn-primary'}" onclick="toggleGuest(${g.id})">${g.active?'⛔ Desactivar':'✅ Activar'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteGuest(${g.id})">🗑️</button>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+// ═══════════════ EXCEL ═══════════════
+function getExportData(){
+  const st=document.getElementById('expStatus')?.value||'';
+  const pr=document.getElementById('expPriority')?.value||'';
+  const fr=document.getElementById('expFrom')?.value;
+  const to=document.getElementById('expTo')?.value;
+  return tickets.filter(t=>{
+    if(st&&t.estado!==st)return false;
+    if(pr&&t.prioridad!==pr)return false;
+    if(fr&&new Date(t.fechaRaw)<new Date(fr))return false;
+    if(to&&new Date(t.fechaRaw)>new Date(to+'T23:59:59'))return false;
+    return true;
+  });
+}
+
+function exportExcel(data){
+  const rows=(data||tickets).map(t=>({'ID':'#'+t.id,'Título':t.titulo,'Descripción':t.desc,'Categoría':t.categoria,'Prioridad':t.prioridad,'Estado':t.estado,'Solicitante':t.solicit,'Email':t.email,'Fecha':t.fecha}));
+  if(!rows.length){ toast('⚠️ No hay tickets para exportar','#f97316'); return; }
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[8,30,40,18,12,14,20,24,18].map(w=>({wch:w}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Tickets');
+  XLSX.writeFile(wb,'TicketFlow_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('📥 Excel descargado');
+}
+
+function exportExcelFiltered(){ exportExcel(getExportData()); }
+
+function previewExport(){
+  const data=getExportData();
+  document.getElementById('previewSection').style.display='block';
+  const body=document.getElementById('previewBody');
+  if(!data.length){ body.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🔍</div><p>Sin resultados con esos filtros</p></div></td></tr>'; return; }
+  body.innerHTML=data.map(t=>`<tr><td><strong>#${t.id}</strong></td><td>${esc(t.titulo)}</td><td>${t.categoria}</td><td>${priBadge(t.prioridad)}</td><td>${staBadge(t.estado)}</td><td>${esc(t.solicit)}</td><td style="font-size:.8rem">${esc(t.email)}</td><td style="font-size:.8rem">${t.fecha}</td></tr>`).join('');
+}
+
+// ═══════════════ HELPERS ═══════════════
+function staBadge(s){const m={'Abierto':'badge-open','En Progreso':'badge-progress','Cerrado':'badge-closed'};const i={'Abierto':'📂','En Progreso':'⚙️','Cerrado':'✅'};return`<span class="badge ${m[s]||''}">${i[s]||''} ${s}</span>`;}
+function priBadge(p){const m={'Urgente':'badge-urgent','Alta':'badge-high','Media':'badge-medium','Baja':'badge-low'};return`<span class="badge ${m[p]||''}">${p}</span>`;}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',ev=>{if(ev.target===m)m.classList.remove('open');}));
+
+let toastTimer;
+function toast(msg,color){
+  const el=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  el.style.background=color||'var(--deep)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3800);
+}
+
+// ═══════════════ INIT ═══════════════
+updateBadge();
+renderDashboard();
+if(guests.length) document.getElementById('badgeGuests').textContent=guests.length;
+updateCreateHint();
+</script>
+</body>
+</html>
