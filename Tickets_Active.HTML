@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TicketFlow — Gestor de Tickets</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --mint:#3dd9a4;--mint-light:#b8f0dc;--mint-pale:#e8faf4;
+  --sky:#5bcfec;--sky-light:#b8edf8;--sky-pale:#e8f7fd;
+  --teal:#1aa57a;--deep:#0d3d2e;
+  --white:#fff;--gray-100:#eef9f5;--gray-200:#d4ede6;--gray-400:#7ab5a0;
+  --text:#0d2e25;--text-soft:#3d6558;
+  --shadow:0 4px 24px rgba(61,217,164,.12);
+  --shadow-lg:0 8px 40px rgba(61,217,164,.18);
+  --radius:16px;--radius-sm:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#e8faf4,#e8f7fd 50%,#f0fbf7);min-height:100vh;color:var(--text);}
+
+/* ── SETUP SCREEN ── */
+#setupScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,var(--deep) 0%,#0a4a38 50%,#084060 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+.setup-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:40px;max-width:560px;width:100%;backdrop-filter:blur(20px);}
+.setup-logo{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.setup-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--mint),var(--sky));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.setup-sub{color:rgba(255,255,255,.55);font-size:.9rem;margin-bottom:28px;}
+.setup-step{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 18px;margin-bottom:12px;font-size:.85rem;color:rgba(255,255,255,.75);line-height:1.6;}
+.setup-step strong{color:var(--mint);}
+.setup-step a{color:var(--sky);text-decoration:underline;}
+.setup-form{display:flex;flex-direction:column;gap:12px;margin-top:20px;}
+.setup-form label{font-size:.78rem;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;}
+.setup-form input{padding:10px 14px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;}
+.setup-form input:focus{border-color:var(--mint);}
+.setup-form input::placeholder{color:rgba(255,255,255,.3);}
+.setup-err{background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#fca5a5;border-radius:8px;padding:10px 14px;font-size:.83rem;display:none;}
+
+/* ── LOADING OVERLAY ── */
+#loadingOverlay{position:fixed;inset:0;z-index:8888;background:rgba(13,61,46,.7);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.loading-spinner{width:48px;height:48px;border:4px solid rgba(61,217,164,.2);border-top-color:var(--mint);border-radius:50%;animation:spin .8s linear infinite;}
+.loading-text{color:#fff;font-size:.95rem;font-weight:500;opacity:.8;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── DB STATUS BAR ── */
+#dbStatusBar{display:flex;align-items:center;gap:8px;padding:7px 32px;font-size:.78rem;font-weight:600;background:var(--mint-pale);color:var(--teal);border-bottom:1px solid var(--gray-200);}
+#dbStatusBar.offline{background:#fef3c7;color:#92400e;}
+#dbStatusBar.error{background:#fee2e2;color:#dc2626;}
+.db-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);flex-shrink:0;}
+#dbStatusBar.offline .db-dot{background:#f59e0b;}
+#dbStatusBar.error .db-dot{background:#ef4444;}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,var(--deep),#0a4a38 60%,#084060);padding:0 32px;height:70px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 20px rgba(0,0,0,.3);position:sticky;top:0;z-index:100;}
+.logo{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
+.logo-dot{color:var(--mint);}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--mint),var(--sky));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.user-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:6px 14px 6px 8px;color:rgba(255,255,255,.85);font-size:.85rem;font-weight:500;}
+.user-avatar{width:28px;height:28px;background:linear-gradient(135deg,var(--mint),var(--sky));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;}
+.role-tag{background:linear-gradient(90deg,var(--mint),var(--sky));color:var(--deep);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;}
+
+/* ── LAYOUT ── */
+.app-wrapper{display:flex;min-height:calc(100vh - 70px);}
+.sidebar{width:240px;flex-shrink:0;background:rgba(255,255,255,.7);backdrop-filter:blur(20px);border-right:1px solid var(--gray-200);padding:24px 16px;display:flex;flex-direction:column;gap:6px;}
+.sidebar-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--gray-400);padding:0 8px;margin-bottom:8px;margin-top:4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:.9rem;font-weight:500;color:var(--text-soft);transition:all .2s;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{background:var(--mint-pale);color:var(--teal);}
+.nav-item.active{background:linear-gradient(135deg,var(--mint-pale),var(--sky-pale));color:var(--teal);font-weight:600;box-shadow:0 2px 8px rgba(61,217,164,.15);}
+.nav-icon{font-size:1.1rem;min-width:22px;text-align:center;}
+.nav-badge{margin-left:auto;background:linear-gradient(135deg,var(--mint),var(--sky));color:var(--deep);font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:12px;min-width:20px;text-align:center;}
+.sidebar-sep{height:1px;background:var(--gray-200);margin:8px 0;}
+.main-content{flex:1;padding:32px;overflow-y:auto;}
+.page{display:none;}
+.page.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.page-title{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--deep);letter-spacing:-.5px;}
+.page-subtitle{color:var(--text-soft);font-size:.9rem;margin-top:2px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.btn-primary{background:linear-gradient(135deg,var(--mint),var(--sky));color:var(--deep);box-shadow:0 4px 16px rgba(61,217,164,.35);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(61,217,164,.45);}
+.btn-secondary{background:#fff;color:var(--teal);border:1.5px solid var(--mint);}
+.btn-secondary:hover{background:var(--mint-pale);}
+.btn-danger{background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;}
+.btn-danger:hover{background:#fecaca;}
+.btn-sm{padding:6px 12px;font-size:.8rem;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
+
+/* ── CARDS ── */
+.card{background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.9);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
+.card-header{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:var(--deep);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+.stat-card{background:rgba(255,255,255,.85);border-radius:var(--radius);padding:20px;border:1px solid var(--gray-200);box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.c1::before{background:linear-gradient(90deg,var(--mint),var(--sky));}
+.stat-card.c2::before{background:linear-gradient(90deg,var(--sky),#a78bfa);}
+.stat-card.c3::before{background:linear-gradient(90deg,#fbbf24,#f97316);}
+.stat-card.c4::before{background:linear-gradient(90deg,#34d399,#059669);}
+.stat-label{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-400);}
+.stat-value{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--deep);margin-top:4px;}
+.stat-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:1.8rem;opacity:.15;}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:.83rem;font-weight:600;color:var(--text-soft);}
+input,select,textarea{padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;outline:none;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(61,217,164,.15);}
+textarea{resize:vertical;min-height:90px;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm);}
+table{width:100%;border-collapse:collapse;font-size:.875rem;}
+thead tr{background:linear-gradient(135deg,var(--deep),#0a4a38);}
+thead th{padding:12px 16px;text-align:left;color:rgba(255,255,255,.85);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--gray-100);transition:background .15s;}
+tbody tr:hover{background:var(--mint-pale);}
+tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;}
+.badge-open{background:#dbeafe;color:#1d4ed8;}
+.badge-progress{background:linear-gradient(90deg,#dcfce7,#d1fae5);color:#166534;}
+.badge-closed{background:#f3f4f6;color:#6b7280;}
+.badge-urgent{background:#fee2e2;color:#dc2626;}
+.badge-high{background:#fef3c7;color:#92400e;}
+.badge-medium{background:var(--sky-pale);color:#0369a1;}
+.badge-low{background:var(--mint-pale);color:var(--teal);}
+
+/* ── FILTERS ── */
+.filters-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;}
+.filters-row input,.filters-row select{padding:8px 12px;font-size:.85rem;width:auto;}
+
+/* ── GUESTS ── */
+.guests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.guest-card{background:rgba(255,255,255,.85);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px;position:relative;box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s;}
+.guest-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+.guest-card-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.guest-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sky));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--deep);flex-shrink:0;}
+.guest-name{font-weight:700;color:var(--deep);font-size:.95rem;}
+.guest-email{font-size:.8rem;color:var(--text-soft);margin-top:2px;}
+.guest-link-box{background:var(--gray-100);border:1px dashed var(--gray-200);border-radius:var(--radius-sm);padding:10px 12px;font-size:.78rem;color:var(--text-soft);word-break:break-all;font-family:monospace;margin-bottom:12px;cursor:pointer;transition:background .2s;}
+.guest-link-box:hover{background:var(--mint-pale);}
+.guest-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+.guest-status{position:absolute;top:16px;right:16px;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:12px;}
+.status-active{background:var(--mint-pale);color:var(--teal);}
+.status-inactive{background:#f3f4f6;color:#6b7280;}
+
+/* ── EMAIL / FIREBASE CONFIG ── */
+.cfg-card{background:linear-gradient(135deg,rgba(13,61,46,.95),rgba(8,64,96,.9));border-radius:var(--radius);padding:28px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden;}
+.cfg-card label{color:rgba(255,255,255,.75);font-size:.78rem;}
+.cfg-card input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;}
+.cfg-card input:focus{border-color:var(--mint);}
+.cfg-card input::placeholder{color:rgba(255,255,255,.3);}
+.cfg-title{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:4px;}
+.cfg-sub{font-size:.83rem;opacity:.65;margin-bottom:18px;line-height:1.5;}
+.cfg-status{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:5px 12px;border-radius:20px;margin-top:12px;}
+.cfg-ok{background:rgba(61,217,164,.2);color:var(--mint);}
+.cfg-warn{background:rgba(251,191,36,.2);color:#fbbf24;}
+.recipients-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.recipient-item{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;}
+.recipient-item input{flex:1;background:transparent;border:none;color:#fff;font-size:.85rem;padding:0;min-width:0;}
+.recipient-item input:focus{box-shadow:none;border:none;background:transparent;}
+.recipient-item input::placeholder{color:rgba(255,255,255,.3);}
+.rm-btn{background:rgba(239,68,68,.25);border:none;color:#ef4444;border-radius:6px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;}
+.rm-btn:hover{background:rgba(239,68,68,.45);}
+.add-rec-btn{background:rgba(255,255,255,.07);border:1.5px dashed rgba(255,255,255,.2);color:rgba(255,255,255,.65);border-radius:8px;padding:8px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:6px;font-family:'DM Sans',sans-serif;transition:background .2s;}
+.add-rec-btn:hover{background:rgba(255,255,255,.13);}
+.vars-box{background:var(--gray-100);border-radius:10px;padding:16px;font-family:monospace;font-size:.82rem;line-height:2;color:var(--deep);}
+.vars-box span{color:var(--teal);font-weight:700;}
+.email-log{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;}
+.log-item{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;padding:6px 10px;border-radius:6px;line-height:1.4;}
+.log-ok{background:#dcfce7;color:#166534;}
+.log-fail{background:#fee2e2;color:#dc2626;}
+.log-info{background:var(--sky-pale);color:#0369a1;}
+.log-time{opacity:.6;min-width:64px;font-size:.75rem;flex-shrink:0;padding-top:1px;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(13,46,37,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .25s;padding:20px;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:var(--radius);padding:32px;width:100%;max-width:560px;box-shadow:0 24px 80px rgba(0,0,0,.18);transform:translateY(20px);transition:transform .3s;max-height:90vh;overflow-y:auto;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--deep);margin-bottom:20px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:28px;right:28px;background:var(--deep);color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:.88rem;font-weight:500;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;transform:translateY(80px);opacity:0;transition:all .3s;z-index:700;max-width:360px;}
+#toast.show{transform:translateY(0);opacity:1;}
+
+/* ── GUEST BANNER ── */
+.guest-banner{background:linear-gradient(135deg,var(--mint),var(--sky));color:var(--deep);padding:10px 32px;display:flex;align-items:center;gap:12px;font-size:.88rem;font-weight:600;}
+
+/* ── MISC ── */
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(13,61,46,.3);border-top-color:var(--deep);border-radius:50%;animation:spin .7s linear infinite;}
+.spinner-white{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-soft);}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:12px;opacity:.5;}
+.empty-state p{font-size:.95rem;}
+.divider{height:1px;background:var(--gray-200);margin:20px 0;}
+.realtime-pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--mint);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+@media(max-width:768px){.sidebar{display:none}.main-content{padding:16px}.form-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SETUP SCREEN — shown only if Firebase not configured
+══════════════════════════════════════════════ -->
+<div id="setupScreen">
+  <div class="setup-box">
+    <div class="setup-logo">
+      <div class="setup-logo-icon">🎫</div>
+      Ticket<span style="color:var(--mint)">Flow</span>
+    </div>
+    <div class="setup-sub">Configuración inicial — Base de datos Firebase</div>
+
+    <div class="setup-step">
+      <strong>Paso 1:</strong> Ir a <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Crear proyecto (nombre libre, sin Analytics)
+    </div>
+    <div class="setup-step">
+      <strong>Paso 2:</strong> En el proyecto → <strong>Realtime Database</strong> → Crear base de datos → Elegir ubicación → Modo <strong>prueba</strong> (30 días) → Luego cambiá las reglas a las de abajo
+    </div>
+    <div class="setup-step">
+      <strong>Paso 3:</strong> Reglas de seguridad (Database → Rules):<br>
+      <code style="font-size:.78rem;background:rgba(0,0,0,.3);display:block;padding:8px;border-radius:6px;margin-top:6px;color:var(--mint)">{ "rules": { ".read": true, ".write": true } }</code>
+    </div>
+    <div class="setup-step">
+      <strong>Paso 4:</strong> En <strong>Project settings ⚙️</strong> → <strong>General</strong> → desplazate abajo → <strong>Tu app</strong> → si no hay, clic en &lt;/&gt; para agregar una web app → copiá el objeto <code>firebaseConfig</code>
+    </div>
+
+    <div id="setupErr" class="setup-err"></div>
+    <div class="setup-form">
+      <div class="form-group"><label>API Key</label><input id="s_apiKey" placeholder="AIzaSy..."></div>
+      <div class="form-group"><label>Auth Domain</label><input id="s_authDomain" placeholder="mi-proyecto.firebaseapp.com"></div>
+      <div class="form-group"><label>Database URL</label><input id="s_dbUrl" placeholder="https://mi-proyecto-default-rtdb.firebaseio.com"></div>
+      <div class="form-group"><label>Project ID</label><input id="s_projectId" placeholder="mi-proyecto-12345"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveFirebaseConfig()">
+        🔥 Conectar con Firebase
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loadingOverlay" style="display:none">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Conectando con la base de datos...</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════════════ -->
+<div id="mainApp" style="display:none">
+
+  <div id="dbStatusBar">
+    <div class="db-dot"></div>
+    <span id="dbStatusText">Conectado a Firebase — datos en tiempo real</span>
+    <span class="realtime-pulse" style="margin-left:4px"></span>
+    <span style="margin-left:auto;opacity:.6;font-weight:400" id="dbProjectName"></span>
+  </div>
+
+  <header>
+    <div class="logo"><div class="logo-icon">🎫</div>Ticket<span class="logo-dot">Flow</span></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="btn btn-secondary btn-sm admin-only" onclick="showPage('firebase')" style="color:var(--teal);font-size:.78rem;padding:5px 10px">⚙️ Firebase</button>
+      <div class="user-badge">
+        <div class="user-avatar" id="headerInitial">AD</div>
+        <span id="headerUserName">Administrador</span>
+        <span class="role-tag" id="headerRole">Admin</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="guest-banner" id="guestBanner" style="display:none">
+    🎫 <strong>Modo Invitado:</strong> Podés crear tickets. Para más opciones contactá al administrador.
+  </div>
+
+  <div class="app-wrapper">
+    <aside class="sidebar" id="sidebarEl">
+      <div class="sidebar-title">Principal</div>
+      <button class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
+      <button class="nav-item" onclick="showPage('tickets')"><span class="nav-icon">🎫</span> Tickets <span class="nav-badge" id="badgeCount">0</span></button>
+      <button class="nav-item" onclick="showPage('crear')"><span class="nav-icon">➕</span> Crear Ticket</button>
+      <div id="adminNav">
+        <div class="sidebar-sep"></div>
+        <div class="sidebar-title">Administración</div>
+        <button class="nav-item" onclick="showPage('accesos')"><span class="nav-icon">👥</span> Invitados <span class="nav-badge" id="badgeGuests">0</span></button>
+        <button class="nav-item" onclick="showPage('correo')"><span class="nav-icon">✉️</span> Notificaciones</button>
+        <button class="nav-item" onclick="showPage('exportar')"><span class="nav-icon">📥</span> Exportar</button>
+        <button class="nav-item" onclick="showPage('firebase')"><span class="nav-icon">🔥</span> Firebase</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div><div class="page-title">Dashboard</div><div class="page-subtitle">Datos en tiempo real desde Firebase <span class="realtime-pulse"></span></div></div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card c1"><div class="stat-label">Total Tickets</div><div class="stat-value" id="statTotal">—</div><div class="stat-icon">🎫</div></div>
+          <div class="stat-card c2"><div class="stat-label">Abiertos</div><div class="stat-value" id="statOpen">—</div><div class="stat-icon">📂</div></div>
+          <div class="stat-card c3"><div class="stat-label">En Progreso</div><div class="stat-value" id="statProgress">—</div><div class="stat-icon">⚙️</div></div>
+          <div class="stat-card c4"><div class="stat-label">Cerrados</div><div class="stat-value" id="statClosed">—</div><div class="stat-icon">✅</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">🕐 Tickets Recientes</div>
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Título</th><th>Prioridad</th><th>Estado</th><th>Solicitante</th><th>Fecha</th></tr></thead>
+            <tbody id="recentBody"><tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><p>Cargando...</p></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TICKETS -->
+      <div class="page" id="page-tickets">
+        <div class="page-header">
+          <div><div class="page-title">Todos los Tickets</div><div class="page-subtitle">Actualizados en tiempo real</div></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-secondary" onclick="showPage('crear')">➕ Nuevo</button>
+            <button class="btn btn-primary admin-only" onclick="exportExcel()">📥 Exportar</button>
+          </div>
+        </div>
+        <div class="filters-row">
+          <input type="text" id="filterSearch" placeholder="🔍 Buscar..." oninput="renderTickets()" style="flex:1;min-width:160px">
+          <select id="filterStatus" onchange="renderTickets()"><option value="">Todos los estados</option><option>Abierto</option><option>En Progreso</option><option>Cerrado</option></select>
+          <select id="filterPriority" onchange="renderTickets()"><option value="">Todas las prioridades</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Título</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Solicitante</th><th>Fecha</th><th>Acciones</th></tr></thead>
+            <tbody id="ticketsBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CREAR -->
+      <div class="page" id="page-crear">
+        <div class="page-header">
+          <div><div class="page-title">Crear Ticket</div><div class="page-subtitle">Se guardará automáticamente en Firebase</div></div>
+        </div>
+        <div class="card">
+          <div class="form-grid">
+            <div class="form-group full"><label>Título del Ticket *</label><input type="text" id="tTitulo" placeholder="Describí el problema brevemente"></div>
+            <div class="form-group full"><label>Descripción *</label><textarea id="tDesc" placeholder="Detallá el problema, pasos, contexto..."></textarea></div>
+            <div class="form-group"><label>Categoría *</label>
+              <select id="tCategoria">
+                <option value="">Seleccioná una categoría</option>
+                <option>Soporte Técnico</option><option>Facturación</option><option>Consulta General</option>
+                <option>Error de Sistema</option><option>Solicitud de Feature</option><option>Recursos Humanos</option><option>Otro</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Prioridad *</label>
+              <select id="tPrioridad"><option value="">Seleccioná prioridad</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+            </div>
+            <div class="form-group"><label>Nombre / Solicitante *</label><input type="text" id="tSolicitante" placeholder="Tu nombre completo"></div>
+            <div class="form-group"><label>Email de contacto *</label><input type="email" id="tEmail" placeholder="correo@ejemplo.com"></div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div id="emailStatusHint" style="font-size:.82rem;color:var(--text-soft)"></div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-secondary" onclick="clearForm()">🗑️ Limpiar</button>
+              <button class="btn btn-primary" id="createBtn" onclick="crearTicket()">✅ Crear Ticket</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVITADOS -->
+      <div class="page" id="page-accesos">
+        <div class="page-header">
+          <div><div class="page-title">Gestión de Invitados</div><div class="page-subtitle">Los invitados solo pueden crear tickets</div></div>
+          <button class="btn btn-primary" onclick="openModal('modalInvitado')">👤 Nuevo Invitado</button>
+        </div>
+        <div id="guestsContainer"><div class="empty-state"><div class="empty-icon">👥</div><p>Cargando invitados...</p></div></div>
+      </div>
+
+      <!-- NOTIFICACIONES EMAIL -->
+      <div class="page" id="page-correo">
+        <div class="page-header"><div><div class="page-title">Notificaciones por Email</div><div class="page-subtitle">Configuración EmailJS</div></div></div>
+        <div class="cfg-card">
+          <div class="cfg-title">⚙️ EmailJS</div>
+          <div class="cfg-sub">Registrate en <strong style="color:var(--mint)">emailjs.com</strong> → creá servicio → creá plantilla → pegá los IDs.</div>
+          <div class="form-grid" style="gap:12px">
+            <div class="form-group"><label>Public Key</label><input type="text" id="cfgPublicKey" placeholder="abc123XYZ..." oninput="saveEmailConfig()"></div>
+            <div class="form-group"><label>Service ID</label><input type="text" id="cfgServiceId" placeholder="service_xxxxx" oninput="saveEmailConfig()"></div>
+            <div class="form-group full"><label>Template ID</label><input type="text" id="cfgTemplateId" placeholder="template_xxxxx" oninput="saveEmailConfig()"></div>
+          </div>
+          <div id="cfgStatus" class="cfg-status cfg-warn">⚠️ Configuración incompleta</div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input type="email" id="testEmailAddr" placeholder="tu@email.com" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:8px 12px;width:220px;font-size:.85rem;font-family:'DM Sans',sans-serif;">
+            <button class="btn btn-primary btn-sm" onclick="testEmail()" id="testBtn">📧 Prueba</button>
+          </div>
+          <div class="divider" style="border-color:rgba(255,255,255,.1);margin:18px 0"></div>
+          <div class="cfg-title" style="font-size:.95rem;margin-bottom:4px">👥 Destinatarios adicionales</div>
+          <div class="cfg-sub" style="margin-bottom:8px">Recibirán copia en cada ticket nuevo. El solicitante siempre recibe confirmación.</div>
+          <div class="recipients-list" id="recipientsList"></div>
+          <button class="add-rec-btn" onclick="addRecipient()">＋ Agregar destinatario</button>
+          <div style="margin-top:10px"><button class="btn btn-primary btn-sm" onclick="saveRecipients()">💾 Guardar</button></div>
+        </div>
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">📋 Variables para la plantilla EmailJS</div>
+          <div class="vars-box">
+            <div><span>{{to_email}}</span> — Correo destinatario &nbsp;|&nbsp; <span>{{to_name}}</span> — Nombre destinatario</div>
+            <div><span>{{ticket_id}}</span> — #0042 &nbsp;|&nbsp; <span>{{ticket_title}}</span> — Título &nbsp;|&nbsp; <span>{{ticket_desc}}</span> — Descripción</div>
+            <div><span>{{ticket_category}}</span> — Categoría &nbsp;|&nbsp; <span>{{ticket_priority}}</span> — Prioridad &nbsp;|&nbsp; <span>{{ticket_status}}</span> — Estado</div>
+            <div><span>{{requester_name}}</span> — Solicitante &nbsp;|&nbsp; <span>{{requester_email}}</span> — Su email &nbsp;|&nbsp; <span>{{ticket_date}}</span> — Fecha</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">📜 Log de envíos</div>
+          <div class="email-log" id="emailLog"><div class="log-item log-info"><span class="log-time">--:--</span><span>Sin registros</span></div></div>
+          <div style="margin-top:10px"><button class="btn btn-secondary btn-sm" onclick="clearLog()">🗑️ Limpiar</button></div>
+        </div>
+      </div>
+
+      <!-- EXPORTAR -->
+      <div class="page" id="page-exportar">
+        <div class="page-header"><div><div class="page-title">Exportar a Excel</div><div class="page-subtitle">Descargá todos los tickets</div></div></div>
+        <div class="card">
+          <div class="card-header">📊 Filtros de exportación</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Estado</label><select id="expStatus"><option value="">Todos</option><option>Abierto</option><option>En Progreso</option><option>Cerrado</option></select></div>
+            <div class="form-group"><label>Prioridad</label><select id="expPriority"><option value="">Todas</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select></div>
+            <div class="form-group"><label>Desde</label><input type="date" id="expFrom"></div>
+            <div class="form-group"><label>Hasta</label><input type="date" id="expTo"></div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn btn-secondary" onclick="previewExport()">👁️ Vista previa</button>
+            <button class="btn btn-primary" onclick="exportExcelFiltered()">📥 Descargar Excel</button>
+          </div>
+        </div>
+        <div id="previewSection" style="display:none;margin-top:20px">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="table-wrap">
+              <table><thead><tr><th>#</th><th>Título</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Solicitante</th><th>Email</th><th>Fecha</th></tr></thead>
+              <tbody id="previewBody"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIREBASE CONFIG -->
+      <div class="page" id="page-firebase">
+        <div class="page-header"><div><div class="page-title">Configuración Firebase</div><div class="page-subtitle">Cambiar proyecto o reconectar</div></div></div>
+        <div class="cfg-card">
+          <div class="cfg-title">🔥 Configuración actual de Firebase</div>
+          <div class="cfg-sub">Podés actualizar los datos de conexión. Esto afectará a todos los usuarios.</div>
+          <div class="form-grid" style="gap:12px">
+            <div class="form-group"><label>API Key</label><input type="text" id="fb_apiKey" placeholder="AIzaSy..."></div>
+            <div class="form-group"><label>Auth Domain</label><input type="text" id="fb_authDomain" placeholder="proyecto.firebaseapp.com"></div>
+            <div class="form-group full"><label>Database URL</label><input type="text" id="fb_dbUrl" placeholder="https://proyecto-rtdb.firebaseio.com"></div>
+            <div class="form-group"><label>Project ID</label><input type="text" id="fb_projectId" placeholder="proyecto-12345"></div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="updateFirebaseConfig()">💾 Guardar y reconectar</button>
+            <button class="btn btn-danger btn-sm" onclick="resetConfig()">🗑️ Restablecer configuración</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">ℹ️ Estado de la conexión</div>
+          <div id="fbStatusDetail" style="font-size:.9rem;color:var(--text-soft);line-height:1.8"></div>
+        </div>
+      </div>
+
+    </main>
+  </div><!-- app-wrapper -->
+</div><!-- mainApp -->
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal">
+    <div class="modal-title">📋 Detalle del Ticket</div>
+    <div id="detalleContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDetalle')">Cerrar</button>
+      <button class="btn btn-primary" id="saveEditBtn" onclick="saveEdit()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INVITADO -->
+<div class="modal-overlay" id="modalInvitado">
+  <div class="modal">
+    <div class="modal-title">👤 Agregar Invitado</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group"><label>Nombre completo *</label><input type="text" id="gNombre" placeholder="Ej: María López"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="gEmail" placeholder="maria@empresa.com"></div>
+      <div class="form-group"><label>Nota (opcional)</label><input type="text" id="gNota" placeholder="Ej: Área de Ventas"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalInvitado')">Cancelar</button>
+      <button class="btn btn-primary" onclick="agregarInvitado()">✅ Generar Acceso</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LINK -->
+<div class="modal-overlay" id="modalLink">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">🔗 Enlace de Acceso</div>
+    <p style="color:var(--text-soft);font-size:.9rem;margin-bottom:14px">Compartí este enlace. El invitado solo podrá crear tickets.</p>
+    <div style="background:var(--gray-100);border:1px dashed var(--gray-200);border-radius:10px;padding:12px;font-family:monospace;font-size:.8rem;word-break:break-all;color:var(--text-soft);cursor:pointer" id="generatedLink" onclick="copyLink()"></div>
+    <p style="font-size:.75rem;color:var(--gray-400);margin-top:6px">Clic en el cuadro para copiar</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="copyLink()">📋 Copiar</button>
+      <button class="btn btn-primary" onclick="closeModal('modalLink')">Listo</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span id="toastMsg"></span></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// FIREBASE CONFIG & INIT
+// ══════════════════════════════════════════════════════════════════
+let db = null;
+let fbCfg = JSON.parse(localStorage.getItem('tf_fbcfg') || 'null');
+
+function saveFirebaseConfig() {
+  const cfg = {
+    apiKey:      document.getElementById('s_apiKey').value.trim(),
+    authDomain:  document.getElementById('s_authDomain').value.trim(),
+    databaseURL: document.getElementById('s_dbUrl').value.trim(),
+    projectId:   document.getElementById('s_projectId').value.trim(),
+  };
+  if (!cfg.apiKey || !cfg.authDomain || !cfg.databaseURL || !cfg.projectId) {
+    showSetupErr('Completá todos los campos'); return;
+  }
+  if (!cfg.databaseURL.startsWith('https://')) {
+    showSetupErr('La Database URL debe empezar con https://'); return;
+  }
+  localStorage.setItem('tf_fbcfg', JSON.stringify(cfg));
+  fbCfg = cfg;
+  initFirebase(cfg);
+}
+
+function showSetupErr(msg) {
+  const el = document.getElementById('setupErr');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+
+function initFirebase(cfg) {
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  try {
+    // If already initialized, use existing
+    if (!firebase.apps.length) {
+      firebase.initializeApp(cfg);
+    }
+    db = firebase.database();
+
+    // Test connection
+    db.ref('.info/connected').on('value', snap => {
+      const connected = snap.val();
+      updateDbStatus(connected);
+    });
+
+    // If we get here, show app
+    document.getElementById('setupScreen').style.display = 'none';
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('dbProjectName').textContent = cfg.projectId;
+
+    // Load data
+    bootApp();
+
+  } catch(e) {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    showSetupErr('Error al conectar: ' + e.message);
+  }
+}
+
+function updateDbStatus(connected) {
+  const bar = document.getElementById('dbStatusBar');
+  const txt = document.getElementById('dbStatusText');
+  if (connected) {
+    bar.className = '';
+    bar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 32px;font-size:.78rem;font-weight:600;background:var(--mint-pale);color:var(--teal);border-bottom:1px solid var(--gray-200)';
+    txt.textContent = 'Conectado a Firebase — datos en tiempo real';
+  } else {
+    bar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 32px;font-size:.78rem;font-weight:600;background:#fef3c7;color:#92400e;border-bottom:1px solid #fde68a';
+    txt.textContent = 'Sin conexión — trabajando en modo offline';
+  }
+}
+
+function updateFirebaseConfig() {
+  const cfg = {
+    apiKey:      document.getElementById('fb_apiKey').value.trim(),
+    authDomain:  document.getElementById('fb_authDomain').value.trim(),
+    databaseURL: document.getElementById('fb_dbUrl').value.trim(),
+    projectId:   document.getElementById('fb_projectId').value.trim(),
+  };
+  if (!cfg.apiKey || !cfg.authDomain || !cfg.databaseURL || !cfg.projectId) {
+    toast('⚠️ Completá todos los campos','#f97316'); return;
+  }
+  localStorage.setItem('tf_fbcfg', JSON.stringify(cfg));
+  toast('✅ Configuración guardada — recargando...');
+  setTimeout(() => location.reload(), 1200);
+}
+
+function resetConfig() {
+  if (!confirm('¿Restablecer la configuración de Firebase? Tendrás que ingresar los datos nuevamente.')) return;
+  localStorage.removeItem('tf_fbcfg');
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let tickets  = {};   // keyed by Firebase push ID
+let guests   = {};
+let editingKey = null;
+let currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
+let emailCfg = JSON.parse(localStorage.getItem('tf_emailcfg') || '{}');
+let emailRecipients = JSON.parse(localStorage.getItem('tf_recipients') || '[]');
+let emailLogArr = JSON.parse(localStorage.getItem('tf_emaillog') || '[]');
+
+// ══════════════════════════════════════════════════════════════════
+// BOOT — called once Firebase is connected
+// ══════════════════════════════════════════════════════════════════
+function bootApp() {
+  // Check guest mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const guestToken = urlParams.get('guest');
+
+  // Subscribe to tickets (real-time)
+  db.ref('tickets').on('value', snap => {
+    tickets = snap.val() || {};
+    renderDashboard();
+    renderTickets();
+    updateBadge();
+  });
+
+  // Subscribe to guests (real-time)
+  db.ref('guests').on('value', snap => {
+    guests = snap.val() || {};
+    const count = Object.keys(guests).length;
+    document.getElementById('badgeGuests').textContent = count;
+
+    // Check guest token
+    if (guestToken) {
+      const found = Object.values(guests).find(g => g.token === guestToken && g.active);
+      if (found) {
+        currentUser = { name: found.name, role: 'guest', email: found.email, token: guestToken };
+        document.getElementById('guestBanner').style.display = 'flex';
+        document.getElementById('adminNav').style.display = 'none';
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+        document.getElementById('headerInitial').textContent = initials(found.name);
+        document.getElementById('headerUserName').textContent = found.name;
+        document.getElementById('headerRole').textContent = 'Invitado';
+        document.getElementById('headerRole').style.background = 'linear-gradient(90deg,var(--sky),#a78bfa)';
+        document.getElementById('tSolicitante').value = found.name;
+        document.getElementById('tEmail').value = found.email;
+        showPage('crear');
+      } else {
+        const b = document.getElementById('guestBanner');
+        b.style.display = 'flex'; b.style.background = '#fee2e2'; b.style.color = '#dc2626';
+        b.innerHTML = '⛔ <strong>Acceso inválido o desactivado.</strong> Solicitá un nuevo enlace al administrador.';
+        showPage('crear');
+      }
+    } else {
+      document.getElementById('headerInitial').textContent = 'AD';
+      renderGuests(); // only render guests page if admin
+    }
+  });
+
+  // Load email config into fields if page opens
+  loadEmailConfigFields();
+  updateCreateHint();
+
+  // Load Firebase config into settings page
+  if (fbCfg) {
+    setValue('fb_apiKey',    fbCfg.apiKey);
+    setValue('fb_authDomain',fbCfg.authDomain);
+    setValue('fb_dbUrl',     fbCfg.databaseURL);
+    setValue('fb_projectId', fbCfg.projectId);
+    document.getElementById('fbStatusDetail').innerHTML =
+      `<strong>Proyecto:</strong> ${fbCfg.projectId}<br>
+       <strong>Database:</strong> ${fbCfg.databaseURL}<br>
+       <strong>Estado:</strong> <span style="color:var(--teal)">✅ Conectado</span>`;
+  }
+}
+
+function setValue(id, val) { const el=document.getElementById(id); if(el && val) el.value=val; }
+
+// ══════════════════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-'+id);
+  if (pg) pg.classList.add('active');
+  const btn = [...document.querySelectorAll('.nav-item')].find(b => b.getAttribute('onclick')?.includes("'"+id+"'"));
+  if (btn) btn.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'tickets')   renderTickets();
+  if (id === 'accesos')   renderGuests();
+  if (id === 'correo')    initEmailPage();
+}
+
+function updateBadge() {
+  document.getElementById('badgeCount').textContent = Object.keys(tickets).length;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CREATE TICKET
+// ══════════════════════════════════════════════════════════════════
+async function crearTicket() {
+  const titulo    = document.getElementById('tTitulo').value.trim();
+  const desc      = document.getElementById('tDesc').value.trim();
+  const categoria = document.getElementById('tCategoria').value;
+  const prioridad = document.getElementById('tPrioridad').value;
+  const solicit   = document.getElementById('tSolicitante').value.trim() || currentUser.name;
+  const email     = document.getElementById('tEmail').value.trim() || currentUser.email;
+
+  if (!titulo||!desc||!categoria||!prioridad||!solicit||!email) {
+    toast('⚠️ Completá todos los campos obligatorios','#f97316'); return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    toast('⚠️ Ingresá un email válido','#f97316'); return;
+  }
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+  const now = new Date();
+  const t = {
+    titulo, desc, categoria, prioridad, solicit, email,
+    estado: 'Abierto',
+    fecha: now.toLocaleString('es-CR', {dateStyle:'short', timeStyle:'short'}),
+    fechaRaw: now.toISOString(),
+    creadoPor: currentUser.role,
+  };
+
+  try {
+    const ref = await db.ref('tickets').push(t);
+    t.id = ref.key;
+
+    clearForm();
+
+    if (isEmailConfigured()) {
+      btn.innerHTML = '<span class="spinner"></span> Enviando correos...';
+      await sendTicketEmails({ ...t, id: ref.key });
+      toast('✅ Ticket creado y correos enviados');
+    } else {
+      toast('✅ Ticket guardado en Firebase');
+    }
+
+    if (currentUser.role !== 'guest') showPage('tickets');
+    else {
+      // Guest success message
+      document.querySelector('#page-crear .card').innerHTML = `
+        <div style="text-align:center;padding:40px 20px">
+          <div style="font-size:4rem;margin-bottom:16px">🎉</div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--deep);margin-bottom:8px">¡Ticket Enviado!</div>
+          <div style="color:var(--text-soft);margin-bottom:24px">Tu solicitud fue registrada correctamente y el equipo la atenderá pronto.</div>
+          <button class="btn btn-primary" onclick="location.reload()">Crear otro ticket</button>
+        </div>`;
+    }
+  } catch(e) {
+    toast('❌ Error al guardar: '+e.message,'#ef4444');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✅ Crear Ticket';
+}
+
+function clearForm() {
+  ['tTitulo','tDesc','tCategoria','tPrioridad','tSolicitante','tEmail'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    el.tagName === 'SELECT' ? el.selectedIndex = 0 : (el.value = '');
+  });
+  if (currentUser.role === 'guest') {
+    document.getElementById('tSolicitante').value = currentUser.name;
+    document.getElementById('tEmail').value = currentUser.email;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const arr = Object.values(tickets);
+  document.getElementById('statTotal').textContent    = arr.length;
+  document.getElementById('statOpen').textContent     = arr.filter(t => t.estado === 'Abierto').length;
+  document.getElementById('statProgress').textContent = arr.filter(t => t.estado === 'En Progreso').length;
+  document.getElementById('statClosed').textContent   = arr.filter(t => t.estado === 'Cerrado').length;
+
+  const body = document.getElementById('recentBody');
+  const sorted = arr.sort((a,b) => new Date(b.fechaRaw) - new Date(a.fechaRaw)).slice(0,6);
+  if (!sorted.length) {
+    body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><p>Aún no hay tickets</p></div></td></tr>';
+    return;
+  }
+  body.innerHTML = sorted.map(t => `
+    <tr>
+      <td><strong style="color:var(--teal)">#${shortId(t)}</strong></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.titulo)}</td>
+      <td>${priBadge(t.prioridad)}</td>
+      <td>${staBadge(t.estado)}</td>
+      <td style="font-size:.85rem">${esc(t.solicit)}</td>
+      <td style="font-size:.8rem;color:var(--text-soft)">${t.fecha}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TICKETS LIST
+// ══════════════════════════════════════════════════════════════════
+function renderTickets() {
+  const s  = (document.getElementById('filterSearch')?.value || '').toLowerCase();
+  const ef = document.getElementById('filterStatus')?.value || '';
+  const pf = document.getElementById('filterPriority')?.value || '';
+
+  let arr = Object.entries(tickets).map(([key, t]) => ({ ...t, _key: key }));
+  arr = arr.filter(t =>
+    (!s || t.titulo.toLowerCase().includes(s) || t.solicit.toLowerCase().includes(s) || shortId(t).includes(s)) &&
+    (!ef || t.estado === ef) && (!pf || t.prioridad === pf)
+  );
+  arr.sort((a,b) => new Date(b.fechaRaw) - new Date(a.fechaRaw));
+
+  const body = document.getElementById('ticketsBody');
+  if (!body) return;
+  if (!arr.length) {
+    body.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🔍</div><p>No hay tickets que coincidan</p></div></td></tr>';
+    return;
+  }
+  const isAdmin = currentUser.role === 'admin';
+  body.innerHTML = arr.map(t => `
+    <tr>
+      <td><strong style="color:var(--teal)">#${shortId(t)}</strong></td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.titulo)}">${esc(t.titulo)}</td>
+      <td style="font-size:.82rem;color:var(--text-soft)">${t.categoria}</td>
+      <td>${priBadge(t.prioridad)}</td>
+      <td>${staBadge(t.estado)}</td>
+      <td style="font-size:.85rem">${esc(t.solicit)}</td>
+      <td style="font-size:.8rem;color:var(--text-soft)">${t.fecha}</td>
+      <td><div style="display:flex;gap:5px">
+        ${isAdmin ? `<button class="btn btn-sm btn-secondary" onclick="editTicket('${t._key}')">✏️</button>` : ''}
+        ${isAdmin ? `<button class="btn btn-sm btn-danger" onclick="deleteTicket('${t._key}')">🗑️</button>` : ''}
+        ${!isAdmin ? `<button class="btn btn-sm btn-secondary" onclick="viewTicket('${t._key}')">👁️</button>` : ''}
+      </div></td>
+    </tr>`).join('');
+}
+
+function shortId(t) {
+  // Use last 4 chars of Firebase key or sequential display
+  if (t._key) return t._key.slice(-4).toUpperCase();
+  return '????';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TICKET ACTIONS (Firebase)
+// ══════════════════════════════════════════════════════════════════
+function editTicket(key) {
+  const t = tickets[key]; if (!t) return;
+  editingKey = key;
+  document.getElementById('detalleContent').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="form-group"><label>Título</label><input id="eT" value="${esc(t.titulo)}"></div>
+      <div class="form-group"><label>Descripción</label><textarea id="eD">${esc(t.desc)}</textarea></div>
+      <div class="form-group"><label>Categoría</label><select id="eC">${['Soporte Técnico','Facturación','Consulta General','Error de Sistema','Solicitud de Feature','Recursos Humanos','Otro'].map(c=>`<option${c===t.categoria?' selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Prioridad</label><select id="eP">${['Urgente','Alta','Media','Baja'].map(p=>`<option${p===t.prioridad?' selected':''}>${p}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Estado</label><select id="eE">${['Abierto','En Progreso','Cerrado'].map(s=>`<option${s===t.estado?' selected':''}>${s}</option>`).join('')}</select></div>
+    </div>`;
+  document.getElementById('saveEditBtn').style.display = '';
+  openModal('modalDetalle');
+}
+
+function viewTicket(key) {
+  const t = tickets[key]; if (!t) return;
+  editingKey = null;
+  document.getElementById('detalleContent').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <strong>#${shortId({_key:key})}</strong>${staBadge(t.estado)}
+    </div>
+    <p style="font-size:1rem;font-weight:600;color:var(--deep)">${esc(t.titulo)}</p>
+    <p style="color:var(--text-soft);margin-top:8px;font-size:.9rem">${esc(t.desc)}</p>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.85rem">
+      <div><strong>Categoría:</strong> ${t.categoria}</div>
+      <div><strong>Prioridad:</strong> ${priBadge(t.prioridad)}</div>
+      <div><strong>Solicitante:</strong> ${esc(t.solicit)}</div>
+      <div><strong>Email:</strong> ${esc(t.email)}</div>
+      <div><strong>Fecha:</strong> ${t.fecha}</div>
+    </div>`;
+  document.getElementById('saveEditBtn').style.display = 'none';
+  openModal('modalDetalle');
+}
+
+async function saveEdit() {
+  if (!editingKey) return;
+  const updates = {
+    titulo:    document.getElementById('eT').value.trim(),
+    desc:      document.getElementById('eD').value.trim(),
+    categoria: document.getElementById('eC').value,
+    prioridad: document.getElementById('eP').value,
+    estado:    document.getElementById('eE').value,
+  };
+  try {
+    await db.ref('tickets/' + editingKey).update(updates);
+    closeModal('modalDetalle');
+    toast('✅ Ticket actualizado');
+  } catch(e) { toast('❌ Error: '+e.message,'#ef4444'); }
+}
+
+async function deleteTicket(key) {
+  if (!confirm('¿Eliminar este ticket?')) return;
+  try {
+    await db.ref('tickets/' + key).remove();
+    toast('🗑️ Ticket eliminado','#ef4444');
+  } catch(e) { toast('❌ Error: '+e.message,'#ef4444'); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GUESTS (Firebase)
+// ══════════════════════════════════════════════════════════════════
+function generateToken() { return 'g_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+async function agregarInvitado() {
+  const name  = document.getElementById('gNombre').value.trim();
+  const email = document.getElementById('gEmail').value.trim();
+  const nota  = document.getElementById('gNota').value.trim();
+  if (!name || !email) { toast('⚠️ Nombre y email requeridos','#f97316'); return; }
+
+  const token = generateToken();
+  const g = { name, email, nota, token, active: true, created: new Date().toLocaleDateString('es-CR') };
+
+  try {
+    await db.ref('guests').push(g);
+    closeModal('modalInvitado');
+    ['gNombre','gEmail','gNota'].forEach(id => document.getElementById(id).value = '');
+    showGuestLink(token);
+    toast('✅ Invitado agregado');
+  } catch(e) { toast('❌ Error: '+e.message,'#ef4444'); }
+}
+
+function showGuestLink(token) {
+  const base = window.location.href.split('?')[0];
+  const link = base + '?guest=' + token;
+  document.getElementById('generatedLink').textContent = link;
+  openModal('modalLink');
+}
+
+function copyLink() {
+  const link = document.getElementById('generatedLink').textContent;
+  navigator.clipboard.writeText(link).then(() => toast('📋 Enlace copiado'));
+}
+
+async function toggleGuest(key) {
+  const g = guests[key]; if (!g) return;
+  try {
+    await db.ref('guests/' + key).update({ active: !g.active });
+    toast(g.active ? '⛔ Invitado desactivado' : '✅ Invitado activado');
+  } catch(e) { toast('❌ Error: '+e.message,'#ef4444'); }
+}
+
+async function deleteGuest(key) {
+  if (!confirm('¿Eliminar este invitado?')) return;
+  try {
+    await db.ref('guests/' + key).remove();
+    toast('🗑️ Invitado eliminado','#ef4444');
+  } catch(e) { toast('❌ Error: '+e.message,'#ef4444'); }
+}
+
+function renderGuests() {
+  const c = document.getElementById('guestsContainer'); if (!c) return;
+  const arr = Object.entries(guests).map(([key, g]) => ({ ...g, _key: key }));
+  if (!arr.length) {
+    c.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>No hay invitados. Agregá uno con el botón de arriba.</p></div>';
+    return;
+  }
+  c.innerHTML = '<div class="guests-grid">' + arr.map(g => `
+    <div class="guest-card">
+      <span class="guest-status ${g.active ? 'status-active':'status-inactive'}">${g.active?'● Activo':'○ Inactivo'}</span>
+      <div class="guest-card-top">
+        <div class="guest-avatar">${initials(g.name)}</div>
+        <div>
+          <div class="guest-name">${esc(g.name)}</div>
+          <div class="guest-email">${esc(g.email)}</div>
+          ${g.nota ? `<div class="guest-email" style="font-style:italic">${esc(g.nota)}</div>` : ''}
+        </div>
+      </div>
+      <div class="guest-link-box" onclick="showGuestLink('${g.token}')">🔗 Ver enlace de acceso</div>
+      <div style="font-size:.78rem;color:var(--gray-400);margin-bottom:10px">Creado: ${g.created}</div>
+      <div class="guest-actions">
+        <button class="btn btn-sm btn-secondary" onclick="showGuestLink('${g.token}')">🔗 Enlace</button>
+        <button class="btn btn-sm ${g.active ? 'btn-secondary':'btn-primary'}" onclick="toggleGuest('${g._key}')">${g.active?'⛔ Desactivar':'✅ Activar'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteGuest('${g._key}')">🗑️</button>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// EXCEL EXPORT
+// ══════════════════════════════════════════════════════════════════
+function getFilteredForExport() {
+  const st = document.getElementById('expStatus')?.value || '';
+  const pr = document.getElementById('expPriority')?.value || '';
+  const fr = document.getElementById('expFrom')?.value;
+  const to = document.getElementById('expTo')?.value;
+  return Object.values(tickets).filter(t => {
+    if (st && t.estado !== st) return false;
+    if (pr && t.prioridad !== pr) return false;
+    if (fr && new Date(t.fechaRaw) < new Date(fr)) return false;
+    if (to && new Date(t.fechaRaw) > new Date(to+'T23:59:59')) return false;
+    return true;
+  }).sort((a,b) => new Date(b.fechaRaw) - new Date(a.fechaRaw));
+}
+
+function exportExcel(data) {
+  const src = data || Object.values(tickets);
+  if (!src.length) { toast('⚠️ No hay tickets para exportar','#f97316'); return; }
+  const rows = src.map(t => ({
+    'ID': t._key ? '#'+t._key.slice(-4).toUpperCase() : '',
+    'Título': t.titulo, 'Descripción': t.desc, 'Categoría': t.categoria,
+    'Prioridad': t.prioridad, 'Estado': t.estado,
+    'Solicitante': t.solicit, 'Email': t.email, 'Fecha': t.fecha,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [8,30,40,18,12,14,20,24,18].map(w => ({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tickets');
+  XLSX.writeFile(wb, 'TicketFlow_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('📥 Excel descargado');
+}
+
+function exportExcelFiltered() { exportExcel(getFilteredForExport()); }
+
+function previewExport() {
+  const data = getFilteredForExport();
+  document.getElementById('previewSection').style.display = 'block';
+  const body = document.getElementById('previewBody');
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🔍</div><p>Sin resultados</p></div></td></tr>';
+    return;
+  }
+  body.innerHTML = data.map(t => `
+    <tr>
+      <td><strong>#${t._key?t._key.slice(-4).toUpperCase():''}</strong></td>
+      <td>${esc(t.titulo)}</td><td>${t.categoria}</td>
+      <td>${priBadge(t.prioridad)}</td><td>${staBadge(t.estado)}</td>
+      <td>${esc(t.solicit)}</td><td style="font-size:.8rem">${esc(t.email)}</td>
+      <td style="font-size:.8rem">${t.fecha}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// EMAIL
+// ══════════════════════════════════════════════════════════════════
+function isEmailConfigured() {
+  return !!(emailCfg.publicKey?.trim() && emailCfg.serviceId?.trim() && emailCfg.templateId?.trim());
+}
+function initEmailJS() {
+  if (!emailCfg.publicKey) return false;
+  try { emailjs.init({ publicKey: emailCfg.publicKey }); return true; } catch(e){ return false; }
+}
+function saveEmailConfig() {
+  emailCfg.publicKey  = document.getElementById('cfgPublicKey').value.trim();
+  emailCfg.serviceId  = document.getElementById('cfgServiceId').value.trim();
+  emailCfg.templateId = document.getElementById('cfgTemplateId').value.trim();
+  localStorage.setItem('tf_emailcfg', JSON.stringify(emailCfg));
+  updateCfgStatus(); updateCreateHint();
+}
+function updateCfgStatus() {
+  const el = document.getElementById('cfgStatus'); if (!el) return;
+  el.className = 'cfg-status ' + (isEmailConfigured() ? 'cfg-ok' : 'cfg-warn');
+  el.textContent = isEmailConfigured() ? '✅ Configuración completa' : '⚠️ Configuración incompleta';
+}
+function updateCreateHint() {
+  const el = document.getElementById('emailStatusHint'); if (!el) return;
+  if (isEmailConfigured()) {
+    const extra = emailRecipients.filter(r=>r.email).length;
+    el.innerHTML = `✉️ Se enviarán <strong>${1+extra}</strong> correo${(1+extra)>1?'s':''} al crear ticket`;
+    el.style.color = 'var(--teal)';
+  } else {
+    el.innerHTML = `⚠️ Sin email — <a href="#" onclick="showPage('correo');return false" style="color:var(--teal);font-weight:600">Configurar</a>`;
+    el.style.color = 'var(--text-soft)';
+  }
+}
+async function sendTicketEmails(t) {
+  if (!initEmailJS()) { addLog('fail','❌ No se pudo inicializar EmailJS'); return; }
+  const base = {
+    ticket_id: '#'+t.id.slice(-4).toUpperCase(), ticket_title:t.titulo, ticket_desc:t.desc,
+    ticket_category:t.categoria, ticket_priority:t.prioridad, ticket_status:t.estado,
+    requester_name:t.solicit, requester_email:t.email, ticket_date:t.fecha,
+  };
+  await sendOne({...base, to_email:t.email, to_name:t.solicit, email_type:'confirmation'}, t.email);
+  for (const r of emailRecipients) {
+    if (!r.email) continue;
+    await sendOne({...base, to_email:r.email, to_name:r.name||r.email, email_type:'notification'}, r.email);
+  }
+}
+async function sendOne(params, label) {
+  try {
+    await emailjs.send(emailCfg.serviceId, emailCfg.templateId, params);
+    addLog('ok','✅ Enviado → '+label);
+  } catch(e) {
+    addLog('fail','❌ Error → '+label+': '+(e?.text||e?.message||JSON.stringify(e)));
+  }
+}
+async function testEmail() {
+  const addr = document.getElementById('testEmailAddr').value.trim();
+  if (!addr) { toast('Ingresá un email de prueba','#f97316'); return; }
+  if (!isEmailConfigured()) { toast('⚠️ Completá la configuración primero','#f97316'); return; }
+  if (!initEmailJS()) { toast('❌ Error al inicializar EmailJS','#ef4444'); return; }
+  const btn = document.getElementById('testBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner-white"></span>';
+  try {
+    await emailjs.send(emailCfg.serviceId, emailCfg.templateId, {
+      to_email:addr, to_name:'Test', ticket_id:'#TEST',
+      ticket_title:'Email de Prueba', ticket_desc:'Verificación de EmailJS.',
+      ticket_category:'Test', ticket_priority:'Baja', ticket_status:'Abierto',
+      requester_name:'Sistema', requester_email:addr,
+      ticket_date:new Date().toLocaleString('es-CR',{dateStyle:'short',timeStyle:'short'}),
+      email_type:'test',
+    });
+    addLog('ok','✅ Prueba enviada a '+addr);
+    toast('✅ Email de prueba enviado');
+  } catch(e) {
+    const msg = e?.text||e?.message||JSON.stringify(e);
+    addLog('fail','❌ Prueba falló: '+msg);
+    toast('❌ '+msg,'#ef4444');
+  }
+  btn.disabled=false; btn.innerHTML='📧 Prueba';
+}
+function loadEmailConfigFields() {
+  setValue('cfgPublicKey', emailCfg.publicKey);
+  setValue('cfgServiceId', emailCfg.serviceId);
+  setValue('cfgTemplateId', emailCfg.templateId);
+  updateCfgStatus(); renderRecipients(); renderEmailLog();
+}
+function initEmailPage() { loadEmailConfigFields(); }
+function renderRecipients() {
+  const el = document.getElementById('recipientsList'); if (!el) return;
+  el.innerHTML = emailRecipients.map((r,i) => `
+    <div class="recipient-item">
+      <input type="text"  value="${esc(r.name||'')}"  placeholder="Nombre"  onchange="emailRecipients[${i}].name=this.value"  style="flex:1">
+      <input type="email" value="${esc(r.email||'')}" placeholder="Email *" onchange="emailRecipients[${i}].email=this.value" style="flex:1.4">
+      <button class="rm-btn" onclick="removeRecipient(${i})">✕</button>
+    </div>`).join('');
+}
+function addRecipient() { emailRecipients.push({name:'',email:''}); renderRecipients(); }
+function removeRecipient(i) { emailRecipients.splice(i,1); renderRecipients(); }
+function saveRecipients() {
+  emailRecipients = emailRecipients.filter(r => r.email.trim());
+  localStorage.setItem('tf_recipients', JSON.stringify(emailRecipients));
+  renderRecipients(); updateCreateHint();
+  toast('✅ '+emailRecipients.length+' destinatario'+(emailRecipients.length!==1?'s guardados':' guardado'));
+}
+function addLog(type, msg) {
+  const now = new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  emailLogArr.unshift({type, msg, time:now});
+  if (emailLogArr.length > 100) emailLogArr.pop();
+  localStorage.setItem('tf_emaillog', JSON.stringify(emailLogArr));
+  renderEmailLog();
+}
+function renderEmailLog() {
+  const el = document.getElementById('emailLog'); if (!el) return;
+  if (!emailLogArr.length) { el.innerHTML='<div class="log-item log-info"><span class="log-time">--:--</span><span>Sin registros</span></div>'; return; }
+  el.innerHTML = emailLogArr.slice(0,30).map(l => `<div class="log-item log-${l.type}"><span class="log-time">${l.time}</span><span>${esc(l.msg)}</span></div>`).join('');
+}
+function clearLog() { emailLogArr=[]; localStorage.removeItem('tf_emaillog'); renderEmailLog(); toast('🗑️ Log limpiado'); }
+
+// ══════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════
+function staBadge(s){const m={'Abierto':'badge-open','En Progreso':'badge-progress','Cerrado':'badge-closed'};const i={'Abierto':'📂','En Progreso':'⚙️','Cerrado':'✅'};return`<span class="badge ${m[s]||''}">${i[s]||''} ${s}</span>`;}
+function priBadge(p){const m={'Urgente':'badge-urgent','Alta':'badge-high','Media':'badge-medium','Baja':'badge-low'};return`<span class="badge ${m[p]||''}">${p}</span>`;}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function initials(n){return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',ev=>{if(ev.target===m)m.classList.remove('open');}));
+
+let toastTimer;
+function toast(msg,color){
+  const el=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  el.style.background=color||'var(--deep)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3800);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STARTUP
+// ══════════════════════════════════════════════════════════════════
+if (fbCfg) {
+  // Already configured — skip setup screen
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  initFirebase(fbCfg);
+}
+// else: setup screen stays visible
+</script>
+</body>
+</html>
