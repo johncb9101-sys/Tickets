@@ -246,38 +246,78 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   AND Firebase is already configured
 ══════════════════════════════════════════════ -->
 <div id="noAccessScreen" class="fullscreen" style="display:none">
-  <div class="fs-box" style="text-align:center;max-width:420px">
-    <div style="font-size:3.5rem;margin-bottom:14px">🚫</div>
-    <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:10px">Acceso restringido</div>
-    <div style="color:rgba(255,255,255,.6);font-size:.9rem;line-height:1.7;margin-bottom:24px">
-      Esta aplicación requiere un enlace de invitado para acceder.<br>
-      Si sos administrador, ingresá tu PIN a continuación.
+  <div class="fs-box" style="text-align:center;max-width:440px">
+    <div class="fs-logo" style="justify-content:center;margin-bottom:6px">
+      <div class="fs-logo-icon">🎫</div>
+      Ticket<span style="color:var(--mint)">Flow</span>
     </div>
-    <!-- Admin PIN entry directly on this screen -->
-    <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:24px;">
-      <div style="color:rgba(255,255,255,.8);font-size:.85rem;font-weight:600;margin-bottom:14px">🔑 PIN de Administrador</div>
-      <div class="pin-dots" id="naPinDots">
-        <div class="pin-dot" id="nad0"></div>
-        <div class="pin-dot" id="nad1"></div>
-        <div class="pin-dot" id="nad2"></div>
-        <div class="pin-dot" id="nad3"></div>
+    <div style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:22px">Panel de Administración</div>
+
+    <!-- PIN panel (default view) -->
+    <div id="pinPanel">
+      <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:24px;">
+        <div style="color:rgba(255,255,255,.85);font-size:.9rem;font-weight:600;margin-bottom:16px">🔑 Ingresá tu PIN de 4 dígitos</div>
+        <div class="pin-dots" id="naPinDots">
+          <div class="pin-dot" id="nad0"></div>
+          <div class="pin-dot" id="nad1"></div>
+          <div class="pin-dot" id="nad2"></div>
+          <div class="pin-dot" id="nad3"></div>
+        </div>
+        <div class="pin-pad" style="max-width:220px;margin:0 auto">
+          <button class="pin-key" onclick="naKey('1')">1</button>
+          <button class="pin-key" onclick="naKey('2')">2</button>
+          <button class="pin-key" onclick="naKey('3')">3</button>
+          <button class="pin-key" onclick="naKey('4')">4</button>
+          <button class="pin-key" onclick="naKey('5')">5</button>
+          <button class="pin-key" onclick="naKey('6')">6</button>
+          <button class="pin-key" onclick="naKey('7')">7</button>
+          <button class="pin-key" onclick="naKey('8')">8</button>
+          <button class="pin-key" onclick="naKey('9')">9</button>
+          <button class="pin-key del" onclick="naKey('del')">⌫</button>
+          <button class="pin-key" onclick="naKey('0')">0</button>
+          <button class="pin-key del" onclick="naKey('clear')">✕</button>
+        </div>
+        <div class="pin-err" id="naPinErr"></div>
       </div>
-      <div class="pin-pad" style="max-width:220px;margin:0 auto">
-        <button class="pin-key" onclick="naKey('1')">1</button>
-        <button class="pin-key" onclick="naKey('2')">2</button>
-        <button class="pin-key" onclick="naKey('3')">3</button>
-        <button class="pin-key" onclick="naKey('4')">4</button>
-        <button class="pin-key" onclick="naKey('5')">5</button>
-        <button class="pin-key" onclick="naKey('6')">6</button>
-        <button class="pin-key" onclick="naKey('7')">7</button>
-        <button class="pin-key" onclick="naKey('8')">8</button>
-        <button class="pin-key" onclick="naKey('9')">9</button>
-        <button class="pin-key del" onclick="naKey('del')">⌫</button>
-        <button class="pin-key" onclick="naKey('0')">0</button>
-        <button class="pin-key del" onclick="naKey('clear')">✕</button>
+      <!-- Recovery link -->
+      <div style="margin-top:18px">
+        <button onclick="showRecovery()" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:.82rem;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;">
+          ¿Olvidaste el PIN? Recuperar acceso
+        </button>
       </div>
-      <div class="pin-err" id="naPinErr"></div>
     </div>
+
+    <!-- Recovery panel (hidden by default) -->
+    <div id="recoveryPanel" style="display:none">
+      <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:24px;text-align:left">
+        <div style="color:rgba(255,255,255,.85);font-size:.9rem;font-weight:700;margin-bottom:4px">🔓 Recuperar acceso de administrador</div>
+        <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-bottom:18px;line-height:1.5">
+          Para resetear el sistema necesitás ingresar las credenciales de Firebase originales. Esto no borra los tickets ni los invitados.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="form-group">
+            <label style="color:rgba(255,255,255,.6);font-size:.75rem;text-transform:uppercase;letter-spacing:.5px">Database URL de Firebase</label>
+            <input id="rec_dbUrl" type="text" placeholder="https://mi-proyecto-rtdb.firebaseio.com"
+              style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;font-size:.88rem;width:100%;outline:none;">
+          </div>
+          <div class="form-group">
+            <label style="color:rgba(255,255,255,.6);font-size:.75rem;text-transform:uppercase;letter-spacing:.5px">Nuevo PIN (4 dígitos)</label>
+            <input id="rec_newPin" type="password" maxlength="4" placeholder="Ej: 5678" inputmode="numeric"
+              style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;font-size:.88rem;width:100%;outline:none;">
+          </div>
+        </div>
+        <div id="recErr" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#fca5a5;border-radius:8px;padding:9px 13px;font-size:.82rem;margin-top:10px;display:none"></div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button onclick="hideRecovery()" style="flex:1;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;">
+            ← Volver
+          </button>
+          <button onclick="doRecovery()" style="flex:2;padding:10px;background:linear-gradient(135deg,var(--mint),var(--sky));border:none;border-radius:8px;color:var(--deep);font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;">
+            🔓 Restablecer acceso
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -702,6 +742,44 @@ function naKey(v) {
       for (let i=0;i<4;i++) document.getElementById('nad'+i).className='pin-dot';
     }
   }
+}
+
+function showRecovery(){
+  document.getElementById('pinPanel').style.display='none';
+  document.getElementById('recoveryPanel').style.display='block';
+  document.getElementById('recErr').style.display='none';
+}
+function hideRecovery(){
+  document.getElementById('recoveryPanel').style.display='none';
+  document.getElementById('pinPanel').style.display='block';
+  naPin='';
+  for(let i=0;i<4;i++) document.getElementById('nad'+i).className='pin-dot';
+  document.getElementById('naPinErr').textContent='';
+}
+function doRecovery(){
+  const dbUrl  = document.getElementById('rec_dbUrl').value.trim();
+  const newPin = document.getElementById('rec_newPin').value.trim();
+  const errEl  = document.getElementById('recErr');
+
+  if(!dbUrl){ errEl.textContent='⚠️ Ingresá la Database URL de Firebase'; errEl.style.display='block'; return; }
+  if(!dbUrl.startsWith('https://')){ errEl.textContent='⚠️ La URL debe empezar con https://'; errEl.style.display='block'; return; }
+  if(!newPin||newPin.length!==4||!/^\d+$/.test(newPin)){ errEl.textContent='⚠️ El nuevo PIN debe ser exactamente 4 dígitos'; errEl.style.display='block'; return; }
+
+  // Verify the entered Database URL matches the stored config
+  const stored = JSON.parse(localStorage.getItem('tf_fbcfg')||'null');
+  if(!stored){ errEl.textContent='⚠️ No hay configuración guardada. Recargá la página para configurar desde cero.'; errEl.style.display='block'; return; }
+  if(stored.databaseURL.trim() !== dbUrl){ errEl.textContent='⚠️ La Database URL no coincide con la configuración guardada.'; errEl.style.display='block'; return; }
+
+  // URL matches — update PIN
+  localStorage.setItem('tf_pin', newPin);
+  ADMIN_PIN = newPin;
+  hideRecovery();
+  document.getElementById('naPinErr').textContent='';
+  // Show confirmation briefly then allow login
+  const err = document.getElementById('naPinErr');
+  err.style.color='var(--mint)';
+  err.textContent='✅ PIN actualizado. Ingresalo ahora.';
+  setTimeout(()=>{ err.textContent=''; err.style.color=''; }, 3000);
 }
 
 // ══════════════════════════════════════════════════════════════
