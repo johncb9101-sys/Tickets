@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TicketActive</title>
+<title>TicketFlow</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -249,7 +249,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   <div class="fs-box" style="text-align:center;max-width:440px">
     <div class="fs-logo" style="justify-content:center;margin-bottom:6px">
       <div class="fs-logo-icon">🎫</div>
-      Ticket<span style="color:var(--mint)">Active</span>
+      Ticket<span style="color:var(--mint)">Flow</span>
     </div>
     <div style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:22px">Panel de Administración</div>
 
@@ -328,7 +328,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   <div class="fs-box">
     <div class="fs-logo">
       <div class="fs-logo-icon">🎫</div>
-      Ticket<span style="color:var(--mint)">Active</span>
+      Ticket<span style="color:var(--mint)">Flow</span>
     </div>
     <div class="fs-sub">Configuración inicial — conectá con Firebase</div>
 
@@ -376,7 +376,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   </div>
 
   <header>
-    <div class="logo"><div class="logo-icon">🎫</div>Ticket<span class="logo-dot">Active</span></div>
+    <div class="logo"><div class="logo-icon">🎫</div>Ticket<span class="logo-dot">Flow</span></div>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="user-badge">
         <div class="user-avatar" id="headerInitial">AD</div>
@@ -467,8 +467,8 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
             <div class="form-group"><label>Categoría *</label>
               <select id="tCategoria">
                 <option value="">Seleccioná una categoría</option>
-                <option>Soporte Técnico CCTV</option><option>Creación de Usuario Alarma</option><option>Error de Sistema de CCTV</option>
-                <option>Consulta General</option><option>Solicitud de Investigación</option><option>Recursos Humanos</option><option>Otro</option>
+                <option>Soporte Técnico</option><option>Facturación</option><option>Consulta General</option>
+                <option>Error de Sistema</option><option>Solicitud de Feature</option><option>Recursos Humanos</option><option>Otro</option>
               </select>
             </div>
             <div class="form-group"><label>Prioridad *</label>
@@ -562,7 +562,23 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
 
       <!-- AJUSTES (admin only) — FIX #4: credentials hidden from guests -->
       <div class="page" id="page-ajustes">
-        <div class="page-header"><div><div class="page-title">Ajustes</div><div class="page-subtitle">Configuración de Firebase y seguridad</div></div></div>
+        <div class="page-header"><div><div class="page-title">Ajustes</div><div class="page-subtitle">Configuración de Firebase, seguridad y admins</div></div></div>
+
+        <!-- ── ADMIN USERS ── -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header" style="justify-content:space-between">
+            <span>👨‍💼 Usuarios Administradores</span>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modalNuevoAdmin')">+ Nuevo Admin</button>
+          </div>
+          <p style="font-size:.85rem;color:var(--text-soft);margin-bottom:16px">
+            Los administradores tienen acceso completo al panel. Cada uno recibe un enlace único que abre la app directamente sin necesidad de PIN.
+          </p>
+          <div id="adminUsersList">
+            <div class="empty-state" style="padding:30px 20px"><div class="empty-icon" style="font-size:2rem">👨‍💼</div><p>Solo existe el admin principal (PIN). Agregá admins adicionales arriba.</p></div>
+          </div>
+        </div>
+
+        <!-- ── FIREBASE CONFIG ── -->
         <div class="cfg-card" style="margin-bottom:20px">
           <div class="cfg-title">🔥 Firebase — cambiar proyecto</div>
           <div class="cfg-sub">Modificar estos datos afectará a todos los usuarios.</div>
@@ -571,13 +587,14 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
             <div class="form-group"><label>Auth Domain</label><input type="password" id="fb_authDomain"></div>
             <div class="form-group full"><label>Database URL</label><input type="password" id="fb_dbUrl"></div>
             <div class="form-group"><label>Project ID</label><input id="fb_projectId"></div>
-            <div class="form-group"><label>Nuevo PIN de Administrador</label><input type="password" id="fb_newPin" maxlength="4" placeholder="Dejar vacío para no cambiar" inputmode="numeric"></div>
+            <div class="form-group"><label>Nuevo PIN de Administrador principal</label><input type="password" id="fb_newPin" maxlength="4" placeholder="Dejar vacío para no cambiar" inputmode="numeric"></div>
           </div>
           <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="updateFirebaseConfig()">💾 Guardar cambios</button>
             <button class="btn btn-danger btn-sm" onclick="resetConfig()">🗑️ Restablecer todo</button>
           </div>
         </div>
+
         <div class="card">
           <div class="card-header">ℹ️ Estado de conexión</div>
           <div id="fbStatusDetail" style="font-size:.9rem;color:var(--text-soft);line-height:1.9"></div>
@@ -630,7 +647,43 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   </div>
 </div>
 
-<div id="toast"><span id="toastMsg"></span></div>
+<!-- MODAL NUEVO ADMIN -->
+<div class="modal-overlay" id="modalNuevoAdmin">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">👨‍💼 Agregar Administrador</div>
+    <p style="color:var(--text-soft);font-size:.88rem;margin-bottom:20px">
+      Los administradores tienen acceso completo al panel. Se genera un enlace único que los autentica automáticamente al abrirlo.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="form-group"><label>Nombre completo *</label><input type="text" id="aNombre" placeholder="Ej: Carlos Pérez"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="aEmail" placeholder="carlos@empresa.com"></div>
+      <div class="form-group"><label>Nota (opcional)</label><input type="text" id="aNota" placeholder="Ej: Jefe de Soporte"></div>
+    </div>
+    <div style="background:var(--sky-pale);border:1px solid var(--sky-light);border-radius:10px;padding:12px 14px;font-size:.83rem;color:#0369a1;margin-top:16px;line-height:1.5">
+      🔒 El enlace generado incluye un token seguro. Compartilo <strong>solo</strong> con la persona indicada. Si se compromete, podés eliminarlo desde esta pantalla.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalNuevoAdmin')">Cancelar</button>
+      <button class="btn btn-primary" onclick="agregarAdmin()">🔑 Generar Enlace Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LINK ADMIN -->
+<div class="modal-overlay" id="modalAdminLink">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">🔑 Enlace de Administrador Generado</div>
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:.83rem;color:#92400e;margin-bottom:16px">
+      ⚠️ <strong>Guardá este enlace ahora.</strong> Da acceso completo al panel de administración. Compartilo solo con la persona indicada.
+    </div>
+    <div style="background:var(--gray-100);border:1px dashed var(--gray-200);border-radius:10px;padding:12px;font-family:monospace;font-size:.78rem;word-break:break-all;color:var(--text-soft);cursor:pointer;line-height:1.6" id="adminLinkUrl" onclick="copyAdminLink()"></div>
+    <p style="font-size:.75rem;color:var(--gray-400);margin-top:6px">Clic en el cuadro para copiar</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="copyAdminLink()">📋 Copiar enlace</button>
+      <button class="btn btn-primary" onclick="closeModal('modalAdminLink')">Listo</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -641,9 +694,10 @@ let fbCfg = JSON.parse(localStorage.getItem('tf_fbcfg') || 'null');
 let ADMIN_PIN = localStorage.getItem('tf_pin') || null;
 
 // ── FIX #3: Determine access mode BEFORE showing anything ──
-const urlParams = new URLSearchParams(window.location.search);
+const urlParams   = new URLSearchParams(window.location.search);
 const GUEST_TOKEN = urlParams.get('guest');
-const IS_DIRECT = !GUEST_TOKEN; // no token in URL
+const ADMIN_TOKEN = urlParams.get('admin');
+const IS_DIRECT   = !GUEST_TOKEN && !ADMIN_TOKEN;
 
 function saveFirebaseConfig() {
   const apiKey      = document.getElementById('s_apiKey').value.trim();
@@ -719,6 +773,102 @@ function resetConfig() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ADMIN USERS — shared admin access via secure token links
+// ══════════════════════════════════════════════════════════════
+function generateAdminToken() {
+  // Simple but hard-to-guess token: timestamp + random
+  const rand = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+  return 'adm_' + rand;
+}
+
+async function agregarAdmin() {
+  const name  = document.getElementById('aNombre').value.trim();
+  const email = document.getElementById('aEmail').value.trim();
+  const nota  = document.getElementById('aNota').value.trim();
+  if (!name || !email) { toast('⚠️ Nombre y email requeridos','#f97316'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('⚠️ Email inválido','#f97316'); return; }
+
+  const token = generateAdminToken();
+  const adminData = {
+    name, email, nota, token,
+    role: 'admin',
+    active: true,
+    created: new Date().toLocaleDateString('es-CR'),
+    createdTs: Date.now()
+  };
+
+  try {
+    await db.ref('adminUsers').push(adminData);
+    closeModal('modalNuevoAdmin');
+    ['aNombre','aEmail','aNota'].forEach(id => document.getElementById(id).value = '');
+    showAdminLink(token);
+    toast('✅ Admin agregado — enlace generado');
+  } catch(e) { toast('❌ Error: ' + e.message, '#ef4444'); }
+}
+
+function showAdminLink(token) {
+  const base = window.location.href.split('?')[0];
+  const link = base + '?admin=' + token;
+  document.getElementById('adminLinkUrl').textContent = link;
+  openModal('modalAdminLink');
+}
+
+function copyAdminLink() {
+  navigator.clipboard.writeText(document.getElementById('adminLinkUrl').textContent)
+    .then(() => toast('📋 Enlace de admin copiado'));
+}
+
+async function toggleAdmin(key) {
+  const a = adminUsers[key]; if (!a) return;
+  try {
+    await db.ref('adminUsers/' + key).update({ active: !a.active });
+    toast(a.active ? '⛔ Acceso de admin desactivado' : '✅ Admin activado');
+  } catch(e) { toast('❌ Error: ' + e.message, '#ef4444'); }
+}
+
+async function deleteAdmin(key) {
+  if (!confirm('¿Eliminar este administrador? Su enlace dejará de funcionar inmediatamente.')) return;
+  try {
+    await db.ref('adminUsers/' + key).remove();
+    toast('🗑️ Admin eliminado — enlace bloqueado', '#ef4444');
+  } catch(e) { toast('❌ Error: ' + e.message, '#ef4444'); }
+}
+
+function showAdminLinkFromKey(key) {
+  const a = adminUsers[key]; if (!a) return;
+  showAdminLink(a.token);
+}
+
+function renderAdminUsers() {
+  const el = document.getElementById('adminUsersList'); if (!el) return;
+  const arr = Object.entries(adminUsers).map(([k, a]) => ({...a, _key: k}));
+  if (!arr.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:30px 20px"><div class="empty-icon" style="font-size:2rem">👨‍💼</div><p>Solo existe el admin principal (PIN). Agregá admins adicionales arriba.</p></div>';
+    return;
+  }
+  el.innerHTML = arr.map(a => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--gray-200);border-radius:12px;margin-bottom:8px;background:${a.active?'rgba(255,255,255,.9)':'#f9fafb'}">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,${a.active?'var(--mint),var(--sky)':'#d1d5db,#9ca3af'});display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;color:${a.active?'var(--deep)':'#fff'};font-size:.85rem;flex-shrink:0">
+        ${initials(a.name)}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:var(--deep);font-size:.92rem;display:flex;align-items:center;gap:8px">
+          ${esc(a.name)}
+          <span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;background:${a.active?'var(--mint-pale)':'#f3f4f6'};color:${a.active?'var(--teal)':'#6b7280'}">${a.active?'● Activo':'○ Inactivo'}</span>
+        </div>
+        <div style="font-size:.8rem;color:var(--text-soft)">${esc(a.email)}${a.nota?` · <em>${esc(a.nota)}</em>`:''}</div>
+        <div style="font-size:.74rem;color:var(--gray-400);margin-top:2px">Creado: ${a.created}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-sm btn-secondary" onclick="showAdminLinkFromKey('${a._key}')" title="Ver enlace">🔗</button>
+        <button class="btn btn-sm ${a.active?'btn-secondary':'btn-primary'}" onclick="toggleAdmin('${a._key}')">${a.active?'⛔':'✅'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteAdmin('${a._key}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
 // FIX #3 — NO-ACCESS PIN SCREEN
 // ══════════════════════════════════════════════════════════════
 let naPin = '';
@@ -786,7 +936,8 @@ function doRecovery(){
 // STATE
 // ══════════════════════════════════════════════════════════════
 let tickets = {};
-let guests  = {};
+let guests   = {};
+let adminUsers = {};
 let editingKey = null;
 let currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
 let emailCfg = JSON.parse(localStorage.getItem('tf_emailcfg') || '{}');
@@ -797,90 +948,98 @@ let emailLogArr = JSON.parse(localStorage.getItem('tf_emaillog') || '[]');
 // BOOT
 // ══════════════════════════════════════════════════════════════
 function bootApp(role) {
+  if (role === 'adminToken') {
+    // Validate admin token against Firebase first
+    db.ref('adminUsers').once('value', snap => {
+      const all = snap.val() || {};
+      const found = Object.values(all).find(a => a.token === ADMIN_TOKEN);
+      if (!found || !found.active) {
+        document.getElementById('mainApp').style.display = 'none';
+        hideLoading();
+        document.getElementById('blockedScreen').style.display = 'flex';
+        return;
+      }
+      currentUser = { name: found.name, role: 'admin', email: found.email };
+      _bootAdminUI();
+    });
+    return;
+  }
+
   if (role === 'admin') {
-    // Full admin access
     currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
-    document.getElementById('adminNav').style.display = 'block';
-    document.getElementById('exportBtnList').style.display = '';
-    document.getElementById('navTicketsLabel').textContent = 'Todos los Tickets';
-    document.getElementById('headerInitial').textContent = 'AD';
-    document.getElementById('dashTitle').textContent = 'Dashboard';
-    document.getElementById('ticketsPageTitle').textContent = 'Todos los Tickets';
-    // Pre-fill Firebase settings page
-    if (fbCfg) {
-      setVal('fb_apiKey', fbCfg.apiKey);
-      setVal('fb_authDomain', fbCfg.authDomain);
-      setVal('fb_dbUrl', fbCfg.databaseURL);
-      setVal('fb_projectId', fbCfg.projectId);
-      document.getElementById('fbStatusDetail').innerHTML =
-        `<strong>Proyecto:</strong> ${fbCfg.projectId}<br><strong>Database:</strong> ${fbCfg.databaseURL}<br><strong>Estado:</strong> <span style="color:var(--teal)">✅ Conectado</span>`;
+    _bootAdminUI();
+    return;
+  }
+
+  // ── GUEST ──
+  db.ref('guests').once('value', snap => {
+    const allGuests = snap.val() || {};
+    guests = allGuests;
+    const found = Object.values(allGuests).find(g => g.token === GUEST_TOKEN);
+    if (!found || !found.active) {
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('blockedScreen').style.display = 'flex';
+      return;
     }
-    // Subscribe to ALL tickets
-    db.ref('tickets').on('value', snap => {
+    currentUser = { name: found.name, role: 'guest', email: found.email, token: GUEST_TOKEN };
+    document.getElementById('guestBanner').style.display = 'flex';
+    document.getElementById('adminNav').style.display = 'none';
+    document.getElementById('exportBtnList').style.display = 'none';
+    document.getElementById('headerInitial').textContent = initials(found.name);
+    document.getElementById('headerUserName').textContent = found.name;
+    document.getElementById('headerRole').textContent = 'Invitado';
+    document.getElementById('headerRole').style.background = 'linear-gradient(90deg,var(--sky),#a78bfa)';
+    document.getElementById('tSolicitante').value = found.name;
+    document.getElementById('tEmail').value = found.email;
+    document.getElementById('navTicketsLabel').textContent = 'Mis Tickets';
+    document.getElementById('dashTitle').textContent = 'Mis Tickets';
+    document.getElementById('dashSubtitle').textContent = 'Solo tus solicitudes';
+    document.getElementById('statLabelTotal').textContent = 'Mis Tickets';
+    document.getElementById('ticketsPageTitle').textContent = 'Mis Tickets';
+    document.getElementById('recentTitle').textContent = '🕐 Mis Tickets Recientes';
+    db.ref('tickets').orderByChild('guestToken').equalTo(GUEST_TOKEN).on('value', snap => {
       tickets = snap.val() || {};
       renderDashboard(); renderTickets(); updateBadge();
     });
-    // Subscribe to guests
-    db.ref('guests').on('value', snap => {
-      guests = snap.val() || {};
-      document.getElementById('badgeGuests').textContent = Object.keys(guests).length;
-      if (document.getElementById('page-accesos').classList.contains('active')) renderGuests();
-    });
     loadEmailConfigFields();
     updateCreateHint();
+    showPage('crear');
+  });
+}
 
-  } else {
-    // Guest mode — validate token in DB
-    db.ref('guests').once('value', snap => {
-      const allGuests = snap.val() || {};
-      guests = allGuests;
-      const found = Object.values(allGuests).find(g => g.token === GUEST_TOKEN);
-
-      // FIX #1: deleted guest → blocked screen
-      // FIX #3: invalid token → blocked screen
-      if (!found) {
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('blockedScreen').style.display = 'flex';
-        return;
-      }
-      // FIX #1: deactivated guest → blocked screen
-      if (!found.active) {
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('blockedScreen').style.display = 'flex';
-        return;
-      }
-
-      // Valid guest
-      currentUser = { name: found.name, role: 'guest', email: found.email, token: GUEST_TOKEN };
-      document.getElementById('guestBanner').style.display = 'flex';
-      document.getElementById('adminNav').style.display = 'none';   // FIX #4
-      document.getElementById('exportBtnList').style.display = 'none';
-      document.getElementById('headerInitial').textContent = initials(found.name);
-      document.getElementById('headerUserName').textContent = found.name;
-      document.getElementById('headerRole').textContent = 'Invitado';
-      document.getElementById('headerRole').style.background = 'linear-gradient(90deg,var(--sky),#a78bfa)';
-      document.getElementById('tSolicitante').value = found.name;
-      document.getElementById('tEmail').value = found.email;
-
-      // FIX #2: guest dashboard shows only their own stats
-      document.getElementById('navTicketsLabel').textContent = 'Mis Tickets';
-      document.getElementById('dashTitle').textContent = 'Mis Tickets';
-      document.getElementById('dashSubtitle').textContent = 'Solo tus solicitudes';
-      document.getElementById('statLabelTotal').textContent = 'Mis Tickets';
-      document.getElementById('ticketsPageTitle').textContent = 'Mis Tickets';
-      document.getElementById('recentTitle').textContent = '🕐 Mis Tickets Recientes';
-
-      // FIX #2: Subscribe only to guest's own tickets
-      db.ref('tickets').orderByChild('guestToken').equalTo(GUEST_TOKEN).on('value', snap => {
-        tickets = snap.val() || {};
-        renderDashboard(); renderTickets(); updateBadge();
-      });
-
-      loadEmailConfigFields();
-      updateCreateHint();
-      showPage('crear');
-    });
+function _bootAdminUI() {
+  document.getElementById('adminNav').style.display = 'block';
+  document.getElementById('exportBtnList').style.display = '';
+  document.getElementById('navTicketsLabel').textContent = 'Todos los Tickets';
+  document.getElementById('dashTitle').textContent = 'Dashboard';
+  document.getElementById('ticketsPageTitle').textContent = 'Todos los Tickets';
+  document.getElementById('headerInitial').textContent = initials(currentUser.name);
+  document.getElementById('headerUserName').textContent = currentUser.name;
+  document.getElementById('headerRole').textContent = 'Admin';
+  hideLoading();
+  if (fbCfg) {
+    setVal('fb_apiKey', fbCfg.apiKey);
+    setVal('fb_authDomain', fbCfg.authDomain);
+    setVal('fb_dbUrl', fbCfg.databaseURL);
+    setVal('fb_projectId', fbCfg.projectId);
+    document.getElementById('fbStatusDetail').innerHTML =
+      `<strong>Proyecto:</strong> ${fbCfg.projectId}<br><strong>Database:</strong> ${fbCfg.databaseURL}<br><strong>Sesión:</strong> <span style="color:var(--teal)">✅ ${esc(currentUser.name)}</span>`;
   }
+  db.ref('tickets').on('value', snap => {
+    tickets = snap.val() || {};
+    renderDashboard(); renderTickets(); updateBadge();
+  });
+  db.ref('guests').on('value', snap => {
+    guests = snap.val() || {};
+    document.getElementById('badgeGuests').textContent = Object.keys(guests).length;
+    if (document.getElementById('page-accesos').classList.contains('active')) renderGuests();
+  });
+  db.ref('adminUsers').on('value', snap => {
+    adminUsers = snap.val() || {};
+    if (document.getElementById('page-ajustes').classList.contains('active')) renderAdminUsers();
+  });
+  loadEmailConfigFields();
+  updateCreateHint();
 }
 
 function setVal(id, v) { const el=document.getElementById(id); if(el&&v) el.value=v; }
@@ -903,6 +1062,7 @@ function showPage(id) {
   if(id==='tickets')   renderTickets();
   if(id==='accesos')   renderGuests();
   if(id==='correo')    initEmailPage();
+  if(id==='ajustes')   renderAdminUsers();
 }
 
 function updateBadge() {
@@ -1294,8 +1454,13 @@ function toast(msg,color){
 // STARTUP
 // ══════════════════════════════════════════════════════════════
 if (!fbCfg) {
-  // First time: show setup screen, hide everything else
+  // First time: show setup screen
   document.getElementById('setupScreen').style.display = 'flex';
+} else if (ADMIN_TOKEN) {
+  // Has an admin token in URL — validate against Firebase
+  document.getElementById('setupScreen').style.display = 'none';
+  showLoading('Verificando acceso de administrador...');
+  initFirebase(fbCfg, 'adminToken');
 } else if (IS_DIRECT) {
   // FIX #3: direct URL with no token → show PIN screen
   document.getElementById('setupScreen').style.display = 'none';
