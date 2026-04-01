@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TicketActive</title>
+<title>TicketFlow</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -191,6 +191,9 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
 .add-rec-btn:hover{background:rgba(255,255,255,.13);}
 .vars-box{background:var(--gray-100);border-radius:10px;padding:16px;font-family:monospace;font-size:.82rem;line-height:2;color:var(--deep);}
 .vars-box span{color:var(--teal);font-weight:700;}
+.var-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:.83rem;color:var(--text-soft);}
+.var-row:last-child{border-bottom:none;}
+.var-tag{background:#e2f0e8;color:var(--teal);font-family:monospace;font-size:.8rem;padding:2px 8px;border-radius:6px;font-weight:700;white-space:nowrap;flex-shrink:0;}
 .email-log{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;}
 .log-item{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;padding:6px 10px;border-radius:6px;line-height:1.4;}
 .log-ok{background:#dcfce7;color:#166534;}
@@ -249,7 +252,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   <div class="fs-box" style="text-align:center;max-width:440px">
     <div class="fs-logo" style="justify-content:center;margin-bottom:6px">
       <div class="fs-logo-icon">🎫</div>
-      Ticket<span style="color:var(--mint)">Active</span>
+      Ticket<span style="color:var(--mint)">Flow</span>
     </div>
     <div style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:22px">Panel de Administración</div>
 
@@ -328,7 +331,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   <div class="fs-box">
     <div class="fs-logo">
       <div class="fs-logo-icon">🎫</div>
-      Ticket<span style="color:var(--mint)">Active</span>
+      Ticket<span style="color:var(--mint)">Flow</span>
     </div>
     <div class="fs-sub">Configuración inicial — conectá con Firebase</div>
 
@@ -376,7 +379,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
   </div>
 
   <header>
-    <div class="logo"><div class="logo-icon">🎫</div>Ticket<span class="logo-dot">Active</span></div>
+    <div class="logo"><div class="logo-icon">🎫</div>Ticket<span class="logo-dot">Flow</span></div>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="user-badge">
         <div class="user-avatar" id="headerInitial">AD</div>
@@ -467,16 +470,21 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
             <div class="form-group"><label>Categoría *</label>
               <select id="tCategoria">
                 <option value="">Seleccioná una categoría</option>
-                <option>Soporte Técnico CCTV</option><option>Creación de Usuario Alarma</option>
-                <option>Error de Sistema CCTV</option><option>Solicitud de Investigación</option><option>Consulta General</option><option>Otro</option>
+                <option>Soporte Técnico</option><option>Facturación</option><option>Consulta General</option>
+                <option>Error de Sistema</option><option>Solicitud de Feature</option><option>Recursos Humanos</option><option>Otro</option>
               </select>
             </div>
             <div class="form-group"><label>Prioridad *</label>
               <select id="tPrioridad"><option value="">Seleccioná prioridad</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select>
             </div>
-            <div class="form-group"><label>Nombre / Solicitante *</label><input type="text" id="tSolicitante" placeholder="Tu nombre completo"></div>
+            <!-- Solicitante -->
+            <div class="form-group full" style="border-top:1px solid var(--gray-200);padding-top:16px;margin-top:4px">
+              <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-400);margin-bottom:12px">👤 Datos del Solicitante</div>
+            </div>
+            <div class="form-group"><label>Nombre completo *</label><input type="text" id="tSolicitante" placeholder="Tu nombre completo"></div>
             <div class="form-group"><label>Email de contacto *</label><input type="email" id="tEmail" placeholder="correo@ejemplo.com"></div>
-            <div class="form-group"><label>Email de jefatura * </label><input type="jefatura" id="tJefatura" placeholder= "correo@ejemplo.com"></div>
+            <div class="form-group"><label>Jefatura *</label><input type="text" id="tJefatura" placeholder="Nombre de tu jefatura directa"></div>
+            <div class="form-group"><label>Email de jefatura *</label><input type="email" id="tEmailJefatura" placeholder="jefatura@empresa.com"></div>
           </div>
           <div class="divider"></div>
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
@@ -500,40 +508,140 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
 
       <!-- NOTIFICACIONES (admin only) — FIX #4: hidden from guests -->
       <div class="page" id="page-correo">
-        <div class="page-header"><div><div class="page-title">Notificaciones por Email</div><div class="page-subtitle">Configuración EmailJS</div></div></div>
-        <div class="cfg-card">
-          <div class="cfg-title">⚙️ EmailJS</div>
-          <div class="cfg-sub">Registrate en <strong style="color:var(--mint)">emailjs.com</strong> → creá servicio → plantilla → pegá los IDs.</div>
+        <div class="page-header"><div><div class="page-title">Notificaciones por Email</div><div class="page-subtitle">Configuración EmailJS — envío automático al crear tickets</div></div></div>
+
+        <!-- CREDENCIALES -->
+        <div class="cfg-card" style="margin-bottom:20px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+            <div>
+              <div class="cfg-title">⚙️ Credenciales EmailJS</div>
+              <div class="cfg-sub" style="margin-bottom:0">
+                Registrate en <a href="https://www.emailjs.com" target="_blank" style="color:var(--mint);font-weight:600">emailjs.com</a> → Creá un servicio de email → Creá una plantilla → Copiá los IDs abajo.
+              </div>
+            </div>
+            <div id="cfgStatus" class="cfg-status cfg-warn" style="flex-shrink:0">⚠️ Incompleto</div>
+          </div>
           <div class="form-grid" style="gap:12px">
-            <div class="form-group"><label>Public Key</label><input type="password" id="cfgPublicKey" placeholder="abc123..." oninput="saveEmailConfig()"></div>
-            <div class="form-group"><label>Service ID</label><input type="password" id="cfgServiceId" placeholder="service_xxx" oninput="saveEmailConfig()"></div>
-            <div class="form-group full"><label>Template ID</label><input type="password" id="cfgTemplateId" placeholder="template_xxx" oninput="saveEmailConfig()"></div>
+            <div class="form-group">
+              <label>Public Key</label>
+              <input type="password" id="cfgPublicKey" placeholder="Ej: abc123XYZ..." oninput="saveEmailConfig()" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label>Service ID</label>
+              <input type="password" id="cfgServiceId" placeholder="Ej: service_xxxxxx" oninput="saveEmailConfig()" autocomplete="off">
+            </div>
+            <div class="form-group full">
+              <label>Template ID</label>
+              <input type="password" id="cfgTemplateId" placeholder="Ej: template_xxxxxx" oninput="saveEmailConfig()" autocomplete="off">
+            </div>
           </div>
-          <div id="cfgStatus" class="cfg-status cfg-warn">⚠️ Incompleto</div>
-          <div style="margin-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <input type="email" id="testEmailAddr" placeholder="tu@email.com para prueba"
-              style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:8px 12px;width:220px;font-size:.85rem;font-family:'DM Sans',sans-serif;">
-            <button class="btn btn-primary btn-sm" onclick="testEmail()" id="testBtn">📧 Prueba</button>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)">
+            <div style="font-size:.82rem;color:rgba(255,255,255,.6);flex:1">Enviá un correo de prueba para verificar la configuración:</div>
+            <input type="email" id="testEmailAddr" placeholder="tu@email.com"
+              style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:8px 12px;width:210px;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none;">
+            <button class="btn btn-primary btn-sm" onclick="testEmail()" id="testBtn">📧 Enviar Prueba</button>
           </div>
-          <div class="divider" style="border-color:rgba(255,255,255,.1);margin:16px 0"></div>
-          <div class="cfg-title" style="font-size:.92rem;margin-bottom:4px">👥 Destinatarios adicionales</div>
-          <div class="cfg-sub" style="margin-bottom:8px">Reciben copia en cada ticket nuevo.</div>
+        </div>
+
+        <!-- DESTINATARIOS -->
+        <div class="cfg-card" style="margin-bottom:20px">
+          <div class="cfg-title" style="margin-bottom:4px">👥 Grupo de Destinatarios Adicionales</div>
+          <div class="cfg-sub">Además del solicitante y su jefatura, estas personas reciben copia en cada ticket nuevo.</div>
           <div class="recipients-list" id="recipientsList"></div>
           <button class="add-rec-btn" onclick="addRecipient()">＋ Agregar destinatario</button>
-          <div style="margin-top:10px"><button class="btn btn-primary btn-sm" onclick="saveRecipients()">💾 Guardar</button></div>
+          <div style="margin-top:12px"><button class="btn btn-primary btn-sm" onclick="saveRecipients()">💾 Guardar destinatarios</button></div>
         </div>
+
+        <!-- FLUJO DE ENVÍO -->
         <div class="card" style="margin-bottom:20px">
-          <div class="card-header">📋 Variables para plantilla EmailJS</div>
-          <div class="vars-box">
-            <div><span>{{to_email}}</span> · <span>{{to_name}}</span> · <span>{{ticket_id}}</span> · <span>{{ticket_title}}</span></div>
-            <div><span>{{ticket_desc}}</span> · <span>{{ticket_category}}</span> · <span>{{ticket_priority}}</span> · <span>{{ticket_status}}</span></div>
-            <div><span>{{boss_email}}</span>· <span>{{requester_name}}</span> · <span>{{requester_email}}</span> · <span>{{ticket_date}}</span></div>
+          <div class="card-header">📬 Flujo de envío por ticket</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div style="background:var(--mint-pale);border:1px solid var(--mint-light);border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:1.5rem;margin-bottom:6px">👤</div>
+              <div style="font-weight:700;color:var(--deep);font-size:.88rem">Solicitante</div>
+              <div style="font-size:.78rem;color:var(--text-soft);margin-top:4px">Recibe confirmación con todos los detalles del ticket</div>
+              <div style="margin-top:8px"><span style="font-size:.7rem;background:var(--mint);color:var(--deep);padding:2px 8px;border-radius:10px;font-weight:700">SIEMPRE</span></div>
+            </div>
+            <div style="background:var(--sky-pale);border:1px solid var(--sky-light);border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:1.5rem;margin-bottom:6px">🏢</div>
+              <div style="font-weight:700;color:var(--deep);font-size:.88rem">Jefatura</div>
+              <div style="font-size:.78rem;color:var(--text-soft);margin-top:4px">Recibe notificación automática al email de jefatura ingresado</div>
+              <div style="margin-top:8px"><span style="font-size:.7rem;background:var(--sky);color:var(--deep);padding:2px 8px;border-radius:10px;font-weight:700">SIEMPRE</span></div>
+            </div>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:1.5rem;margin-bottom:6px">👥</div>
+              <div style="font-weight:700;color:var(--deep);font-size:.88rem">Destinatarios Extra</div>
+              <div style="font-size:.78rem;color:var(--text-soft);margin-top:4px">Los que agregues en la sección de arriba</div>
+              <div style="margin-top:8px"><span id="extraCount" style="font-size:.7rem;background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:10px;font-weight:700">0 configurados</span></div>
+            </div>
           </div>
         </div>
+
+        <!-- VARIABLES DE PLANTILLA -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">📋 Variables disponibles para la plantilla</div>
+          <p style="font-size:.85rem;color:var(--text-soft);margin-bottom:16px">Usá estas variables al diseñar tu plantilla en el panel de EmailJS. Copiá y pegá el nombre exacto:</p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+            <!-- Destinatario -->
+            <div style="background:var(--gray-100);border-radius:12px;padding:16px">
+              <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-400);margin-bottom:10px">📨 Destinatario</div>
+              <div class="var-row"><code class="var-tag">{{to_email}}</code><span>Correo del destinatario</span></div>
+              <div class="var-row"><code class="var-tag">{{to_name}}</code><span>Nombre del destinatario</span></div>
+              <div class="var-row"><code class="var-tag">{{email_type}}</code><span>confirmation / jefatura / notification</span></div>
+            </div>
+            <!-- Ticket -->
+            <div style="background:var(--gray-100);border-radius:12px;padding:16px">
+              <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-400);margin-bottom:10px">🎫 Ticket</div>
+              <div class="var-row"><code class="var-tag">{{ticket_id}}</code><span>Número de ticket (ej: #A1B2C)</span></div>
+              <div class="var-row"><code class="var-tag">{{ticket_title}}</code><span>Título del ticket</span></div>
+              <div class="var-row"><code class="var-tag">{{ticket_desc}}</code><span>Descripción completa</span></div>
+              <div class="var-row"><code class="var-tag">{{ticket_category}}</code><span>Categoría</span></div>
+              <div class="var-row"><code class="var-tag">{{ticket_priority}}</code><span>Prioridad</span></div>
+              <div class="var-row"><code class="var-tag">{{ticket_status}}</code><span>Estado actual</span></div>
+              <div class="var-row"><code class="var-tag">{{ticket_date}}</code><span>Fecha de creación</span></div>
+            </div>
+            <!-- Solicitante -->
+            <div style="background:var(--mint-pale);border-radius:12px;padding:16px">
+              <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--teal);margin-bottom:10px">👤 Solicitante</div>
+              <div class="var-row"><code class="var-tag" style="background:var(--mint-light)">{{requester_name}}</code><span>Nombre del solicitante</span></div>
+              <div class="var-row"><code class="var-tag" style="background:var(--mint-light)">{{requester_email}}</code><span>Email del solicitante</span></div>
+              <div class="var-row"><code class="var-tag" style="background:var(--mint-light)">{{requester_boss}}</code><span>Nombre de la jefatura</span></div>
+              <div class="var-row"><code class="var-tag" style="background:var(--mint-light)">{{requester_boss_email}}</code><span>Email de la jefatura</span></div>
+            </div>
+          </div>
+
+          <!-- Email preview -->
+          <div style="margin-top:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+            <div style="background:var(--deep);padding:10px 16px;display:flex;align-items:center;gap:8px">
+              <span style="color:rgba(255,255,255,.5);font-size:.75rem">De:</span><span style="color:rgba(255,255,255,.8);font-size:.82rem">TicketFlow &lt;noreply@ticketflow.com&gt;</span>
+              <span style="color:rgba(255,255,255,.5);font-size:.75rem;margin-left:16px">Para:</span><span style="color:var(--mint);font-size:.82rem">solicitante@empresa.com</span>
+            </div>
+            <div style="padding:20px;font-size:.88rem;color:#334155;line-height:1.7">
+              <div style="font-size:1.05rem;font-weight:700;color:#0f172a;margin-bottom:14px">🎫 Tu ticket #A3F9B fue creado correctamente</div>
+              <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:.85rem">
+                <span style="font-weight:600;color:var(--teal)">Título:</span><span>Error al generar factura mensual</span>
+                <span style="font-weight:600;color:var(--teal)">Categoría:</span><span>Facturación</span>
+                <span style="font-weight:600;color:var(--teal)">Prioridad:</span><span>Alta</span>
+                <span style="font-weight:600;color:var(--teal)">Estado:</span><span>Abierto</span>
+                <span style="font-weight:600;color:var(--teal)">Solicitante:</span><span>Ana García</span>
+                <span style="font-weight:600;color:var(--teal)">Email:</span><span>ana@empresa.com</span>
+                <span style="font-weight:600;color:#0369a1">Jefatura:</span><span>Carlos Pérez</span>
+                <span style="font-weight:600;color:#0369a1">Email jefatura:</span><span>carlos@empresa.com</span>
+                <span style="font-weight:600;color:var(--teal)">Fecha:</span><span>28/3/2026, 10:15</span>
+              </div>
+              <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:.78rem;color:#94a3b8">Este es un mensaje automático de TicketFlow. No respondas este correo.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOG -->
         <div class="card">
-          <div class="card-header">📜 Log de envíos</div>
+          <div class="card-header" style="justify-content:space-between">
+            <span>📜 Log de envíos</span>
+            <button class="btn btn-secondary btn-sm" onclick="clearLog()">🗑️ Limpiar</button>
+          </div>
           <div class="email-log" id="emailLog"></div>
-          <div style="margin-top:10px"><button class="btn btn-secondary btn-sm" onclick="clearLog()">🗑️ Limpiar</button></div>
         </div>
       </div>
 
@@ -1074,15 +1182,20 @@ function updateBadge() {
 // CREATE TICKET
 // ══════════════════════════════════════════════════════════════
 async function crearTicket() {
-  const titulo    = document.getElementById('tTitulo').value.trim();
-  const desc      = document.getElementById('tDesc').value.trim();
-  const categoria = document.getElementById('tCategoria').value;
-  const prioridad = document.getElementById('tPrioridad').value;
-  const solicit   = document.getElementById('tSolicitante').value.trim()||currentUser.name;
-  const email     = document.getElementById('tEmail').value.trim()||currentUser.email;
+  const titulo       = document.getElementById('tTitulo').value.trim();
+  const desc         = document.getElementById('tDesc').value.trim();
+  const categoria    = document.getElementById('tCategoria').value;
+  const prioridad    = document.getElementById('tPrioridad').value;
+  const solicit      = document.getElementById('tSolicitante').value.trim()||currentUser.name;
+  const email        = document.getElementById('tEmail').value.trim()||currentUser.email;
+  const jefatura     = document.getElementById('tJefatura').value.trim();
+  const emailJefatura= document.getElementById('tEmailJefatura').value.trim();
 
-  if (!titulo||!desc||!categoria||!prioridad||!solicit||!email) { toast('⚠️ Completá todos los campos','#f97316'); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('⚠️ Email inválido','#f97316'); return; }
+  if (!titulo||!desc||!categoria||!prioridad||!solicit||!email||!jefatura||!emailJefatura) {
+    toast('⚠️ Completá todos los campos','#f97316'); return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('⚠️ Email del solicitante inválido','#f97316'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailJefatura)) { toast('⚠️ Email de jefatura inválido','#f97316'); return; }
 
   const btn=document.getElementById('createBtn');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando...';
@@ -1090,10 +1203,10 @@ async function crearTicket() {
   const now=new Date();
   const t = {
     titulo, desc, categoria, prioridad, solicit, email,
+    jefatura, emailJefatura,
     estado:'Abierto',
     fecha:now.toLocaleString('es-CR',{dateStyle:'short',timeStyle:'short'}),
     fechaRaw:now.toISOString(),
-    // FIX #2: tag ticket with guest token so we can filter later
     guestToken: currentUser.role==='guest' ? GUEST_TOKEN : 'admin',
     creadoPor: currentUser.role,
   };
@@ -1123,7 +1236,7 @@ async function crearTicket() {
 }
 
 function clearForm() {
-  ['tTitulo','tDesc','tCategoria','tPrioridad','tSolicitante','tEmail'].forEach(id=>{
+  ['tTitulo','tDesc','tCategoria','tPrioridad','tSolicitante','tEmail','tJefatura','tEmailJefatura'].forEach(id=>{
     const el=document.getElementById(id); if(!el)return;
     el.tagName==='SELECT'?el.selectedIndex=0:(el.value='');
   });
@@ -1202,6 +1315,13 @@ function editTicket(key){
       <div class="form-group"><label>Categoría</label><select id="eC">${['Soporte Técnico','Facturación','Consulta General','Error de Sistema','Solicitud de Feature','Recursos Humanos','Otro'].map(c=>`<option${c===t.categoria?' selected':''}>${c}</option>`).join('')}</select></div>
       <div class="form-group"><label>Prioridad</label><select id="eP">${['Urgente','Alta','Media','Baja'].map(p=>`<option${p===t.prioridad?' selected':''}>${p}</option>`).join('')}</select></div>
       <div class="form-group"><label>Estado</label><select id="eE">${['Abierto','En Progreso','Cerrado'].map(s=>`<option${s===t.estado?' selected':''}>${s}</option>`).join('')}</select></div>
+      <div style="border-top:1px solid var(--gray-200);padding-top:12px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-400)">👤 Solicitante</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Nombre</label><input id="eSolicit" value="${esc(t.solicit||'')}"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="eEmail" value="${esc(t.email||'')}"></div>
+        <div class="form-group"><label>Jefatura</label><input id="eJefatura" value="${esc(t.jefatura||'')}"></div>
+        <div class="form-group"><label>Email jefatura</label><input type="email" id="eEmailJefatura" value="${esc(t.emailJefatura||'')}"></div>
+      </div>
     </div>`;
   document.getElementById('saveEditBtn').style.display='';
   openModal('modalDetalle');
@@ -1216,8 +1336,12 @@ function viewTicket(key){
     <p style="color:var(--text-soft);margin-top:8px;font-size:.9rem">${esc(t.desc)}</p>
     <div class="divider"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.85rem">
-      <div><strong>Categoría:</strong> ${t.categoria}</div><div><strong>Prioridad:</strong> ${priBadge(t.prioridad)}</div>
-      <div><strong>Solicitante:</strong> ${esc(t.solicit)}</div><div><strong>Email:</strong> ${esc(t.email)}</div>
+      <div><strong>Categoría:</strong> ${t.categoria}</div>
+      <div><strong>Prioridad:</strong> ${priBadge(t.prioridad)}</div>
+      <div><strong>Solicitante:</strong> ${esc(t.solicit)}</div>
+      <div><strong>Email:</strong> ${esc(t.email)}</div>
+      <div><strong>Jefatura:</strong> ${esc(t.jefatura||'—')}</div>
+      <div><strong>Email jefatura:</strong> ${esc(t.emailJefatura||'—')}</div>
       <div><strong>Fecha:</strong> ${t.fecha}</div>
     </div>`;
   document.getElementById('saveEditBtn').style.display='none';
@@ -1226,7 +1350,17 @@ function viewTicket(key){
 
 async function saveEdit(){
   if(!editingKey)return;
-  const updates={titulo:document.getElementById('eT').value.trim(),desc:document.getElementById('eD').value.trim(),categoria:document.getElementById('eC').value,prioridad:document.getElementById('eP').value,estado:document.getElementById('eE').value};
+  const updates={
+    titulo:   document.getElementById('eT').value.trim(),
+    desc:     document.getElementById('eD').value.trim(),
+    categoria:document.getElementById('eC').value,
+    prioridad:document.getElementById('eP').value,
+    estado:   document.getElementById('eE').value,
+    solicit:  document.getElementById('eSolicit')?.value.trim()||tickets[editingKey]?.solicit,
+    email:    document.getElementById('eEmail')?.value.trim()||tickets[editingKey]?.email,
+    jefatura: document.getElementById('eJefatura')?.value.trim()||tickets[editingKey]?.jefatura||'',
+    emailJefatura: document.getElementById('eEmailJefatura')?.value.trim()||tickets[editingKey]?.emailJefatura||'',
+  };
   try{ await db.ref('tickets/'+editingKey).update(updates); closeModal('modalDetalle'); toast('✅ Ticket actualizado'); }
   catch(e){ toast('❌ Error: '+e.message,'#ef4444'); }
 }
@@ -1327,9 +1461,22 @@ function getFilteredForExport(){
 function exportExcel(data){
   const src=data||Object.values(tickets);
   if(!src.length){toast('⚠️ No hay tickets para exportar','#f97316');return;}
-  const rows=src.map(t=>({'ID':'#'+sid(t),'Título':t.titulo,'Descripción':t.desc,'Categoría':t.categoria,'Prioridad':t.prioridad,'Estado':t.estado,'Solicitante':t.solicit,'Email':t.email,'Fecha':t.fecha,'Creado por':t.creadoPor||''}));
+  const rows=src.map(t=>({
+    'ID':           '#'+sid(t),
+    'Título':       t.titulo,
+    'Descripción':  t.desc,
+    'Categoría':    t.categoria,
+    'Prioridad':    t.prioridad,
+    'Estado':       t.estado,
+    'Solicitante':  t.solicit,
+    'Email':        t.email,
+    'Jefatura':     t.jefatura||'',
+    'Email Jefatura': t.emailJefatura||'',
+    'Fecha':        t.fecha,
+    'Creado por':   t.creadoPor||'',
+  }));
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[8,30,40,18,12,14,20,24,18,12].map(w=>({wch:w}));
+  ws['!cols']=[8,30,40,18,12,14,20,24,20,24,18,12].map(w=>({wch:w}));
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Tickets');
   XLSX.writeFile(wb,'TicketFlow_'+new Date().toISOString().slice(0,10)+'.xlsx');
@@ -1371,9 +1518,30 @@ function updateCreateHint(){
 }
 async function sendTicketEmails(t){
   if(!initEmailJS()){addLog('fail','❌ No se pudo inicializar EmailJS');return;}
-  const base={ticket_id:'#'+sid(t),ticket_title:t.titulo,ticket_desc:t.desc,ticket_category:t.categoria,ticket_priority:t.prioridad,ticket_status:t.estado,requester_name:t.solicit,requester_email:t.email,ticket_date:t.fecha};
-  await sendOne({...base,to_email:t.email,to_name:t.solicit,email_type:'confirmation'},t.email);
-  for(const r of emailRecipients){if(!r.email)continue;await sendOne({...base,to_email:r.email,to_name:r.name||r.email,email_type:'notification'},r.email);}
+  const base={
+    ticket_id:        '#'+sid(t),
+    ticket_title:     t.titulo,
+    ticket_desc:      t.desc,
+    ticket_category:  t.categoria,
+    ticket_priority:  t.prioridad,
+    ticket_status:    t.estado,
+    ticket_date:      t.fecha,
+    requester_name:   t.solicit,
+    requester_email:  t.email,
+    requester_boss:   t.jefatura     || '—',
+    requester_boss_email: t.emailJefatura || '—',
+  };
+  // 1. Confirmación al solicitante
+  await sendOne({...base, to_email:t.email,         to_name:t.solicit,    email_type:'confirmation'}, t.email);
+  // 2. Notificación a la jefatura
+  if(t.emailJefatura){
+    await sendOne({...base, to_email:t.emailJefatura, to_name:t.jefatura||'Jefatura', email_type:'jefatura'}, t.emailJefatura);
+  }
+  // 3. Destinatarios adicionales
+  for(const r of emailRecipients){
+    if(!r.email)continue;
+    await sendOne({...base, to_email:r.email, to_name:r.name||r.email, email_type:'notification'}, r.email);
+  }
 }
 async function sendOne(params,label){
   try{await emailjs.send(emailCfg.serviceId,emailCfg.templateId,params);addLog('ok','✅ Enviado → '+label);}
@@ -1414,6 +1582,8 @@ function saveRecipients(){
   emailRecipients=emailRecipients.filter(r=>r.email.trim());
   localStorage.setItem('tf_recipients',JSON.stringify(emailRecipients));
   renderRecipients();updateCreateHint();
+  const ec=document.getElementById('extraCount');
+  if(ec) ec.textContent=emailRecipients.length+' configurado'+(emailRecipients.length!==1?'s':'');
   toast('✅ '+emailRecipients.length+' destinatario'+(emailRecipients.length!==1?'s guardados':' guardado'));
 }
 function addLog(type,msg){
