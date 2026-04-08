@@ -251,15 +251,14 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
 <div id="noAccessScreen" class="fullscreen" style="display:none">
   <div class="fs-box" style="text-align:center;max-width:440px">
     <div class="fs-logo" style="justify-content:center;margin-bottom:6px">
-      <div class="fs-logo-icon">🎫</div>
-      Ticket<span style="color:var(--mint)">Active</span>
+      <div class="fs-logo-icon">🎫</div>Ticket<span style="color:var(--mint)">Active</span>
     </div>
     <div style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:22px">Panel de Administración</div>
 
     <!-- PIN panel (default view) -->
     <div id="pinPanel">
       <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:24px;">
-        <div style="color:rgba(255,255,255,.85);font-size:.9rem;font-weight:600;margin-bottom:16px">🔑 Ingresá tu PIN de 4 dígitos</div>
+        <div style="color:rgba(255,255,255,.85);font-size:.9rem;font-weight:600;margin-bottom:16px">Ingresá tu PIN de 4 dígitos</div>
         <div class="pin-dots" id="naPinDots">
           <div class="pin-dot" id="nad0"></div>
           <div class="pin-dot" id="nad1"></div>
@@ -293,7 +292,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
     <!-- Recovery panel (hidden by default) -->
     <div id="recoveryPanel" style="display:none">
       <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:24px;text-align:left">
-        <div style="color:rgba(255,255,255,.85);font-size:.9rem;font-weight:700;margin-bottom:4px">🔓 Recuperar acceso de administrador</div>
+        <div style="color:rgba(255,255,255,.85);font-size:.9rem;font-weight:700;margin-bottom:4px">Recuperar acceso de administrador</div>
         <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-bottom:18px;line-height:1.5">
           Para resetear el sistema necesitás ingresar las credenciales de Firebase originales. Esto no borra los tickets ni los invitados.
         </div>
@@ -315,7 +314,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
             ← Volver
           </button>
           <button onclick="doRecovery()" style="flex:2;padding:10px;background:linear-gradient(135deg,var(--mint),var(--sky));border:none;border-radius:8px;color:var(--deep);font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;">
-            🔓 Restablecer acceso
+            Restablecer acceso
           </button>
         </div>
       </div>
@@ -330,8 +329,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
 <div id="setupScreen" class="fullscreen">
   <div class="fs-box">
     <div class="fs-logo">
-      <div class="fs-logo-icon">🎫</div>
-      Ticket<span style="color:var(--mint)">Active</span>
+      <div class="fs-logo-icon">🎫</div>Ticket<span style="color:var(--mint)">Active</span>
     </div>
     <div class="fs-sub">Configuración inicial — conectá con Firebase</div>
 
@@ -354,7 +352,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
         <input id="s_pin" type="password" maxlength="4" placeholder="Ej: 1234" inputmode="numeric">
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="saveFirebaseConfig()">
-        🔥 Conectar con Firebase
+        Conectar con Firebase
       </button>
     </div>
   </div>
@@ -428,7 +426,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
           <div class="stat-card c4"><div class="stat-label">Cerrados</div><div class="stat-value" id="statClosed">—</div><div class="stat-icon">✅</div></div>
         </div>
         <div class="card">
-          <div class="card-header" id="recentTitle">🕐 Tickets Recientes</div>
+          <div class="card-header" id="recentTitle">Tickets Recientes</div>
           <div class="table-wrap">
             <table><thead><tr><th>#</th><th>Título</th><th>Prioridad</th><th>Estado</th><th>Solicitante</th><th>Fecha</th></tr></thead>
             <tbody id="recentBody"><tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><p>Cargando...</p></div></td></tr></tbody></table>
@@ -514,7 +512,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
         <div class="cfg-card" style="margin-bottom:20px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
             <div>
-              <div class="cfg-title">⚙️ Credenciales EmailJS</div>
+              <div class="cfg-title">📩 Credenciales EmailJS</div>
               <div class="cfg-sub" style="margin-bottom:0">
                 Registrate en <a href="https://www.emailjs.com" target="_blank" style="color:var(--mint);font-weight:600">emailjs.com</a> → Creá un servicio de email → Creá una plantilla → Copiá los IDs abajo.
               </div>
@@ -539,7 +537,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
             <div style="font-size:.82rem;color:rgba(255,255,255,.6);flex:1">Enviá un correo de prueba para verificar la configuración:</div>
             <input type="email" id="testEmailAddr" placeholder="tu@email.com"
               style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:8px 12px;width:210px;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none;">
-            <button class="btn btn-primary btn-sm" onclick="testEmail()" id="testBtn">📧 Enviar Prueba</button>
+            <button class="btn btn-primary btn-sm" onclick="testEmail()" id="testBtn">Enviar Prueba</button>
           </div>
         </div>
 
@@ -614,13 +612,13 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
           <!-- Email preview -->
           <div style="margin-top:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
             <div style="background:var(--deep);padding:10px 16px;display:flex;align-items:center;gap:8px">
-              <span style="color:rgba(255,255,255,.5);font-size:.75rem">De:</span><span style="color:rgba(255,255,255,.8);font-size:.82rem">TicketActive &lt;noreply@ticketflow.com&gt;</span>
+              <span style="color:rgba(255,255,255,.5);font-size:.75rem">De:</span><span style="color:rgba(255,255,255,.8);font-size:.82rem">TicketActive &lt;noreply@ticketactive.com&gt;</span>
               <span style="color:rgba(255,255,255,.5);font-size:.75rem;margin-left:16px">Para:</span><span style="color:var(--mint);font-size:.82rem">solicitante@empresa.com</span>
             </div>
             <div style="padding:20px;font-size:.88rem;color:#334155;line-height:1.7">
               <div style="font-size:1.05rem;font-weight:700;color:#0f172a;margin-bottom:14px">🎫 Tu ticket #A3F9B fue creado correctamente</div>
               <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:.85rem">
-                <span style="font-weight:600;color:var(--teal)">Título:</span><span>Error al generar factura mensual</span>
+                <span style="font-weight:600;color:var(--teal)">Título:</span><span>Error en el ingreso de datos</span>
                 <span style="font-weight:600;color:var(--teal)">Categoría:</span><span>Facturación</span>
                 <span style="font-weight:600;color:var(--teal)">Prioridad:</span><span>Alta</span>
                 <span style="font-weight:600;color:var(--teal)">Estado:</span><span>Abierto</span>
@@ -658,8 +656,8 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
           </div>
           <div class="divider"></div>
           <div style="display:flex;gap:10px;justify-content:flex-end">
-            <button class="btn btn-secondary" onclick="previewExport()">👁️ Vista previa</button>
-            <button class="btn btn-primary" onclick="exportExcelFiltered()">📥 Descargar Excel</button>
+            <button class="btn btn-secondary" onclick="previewExport()">Vista previa</button>
+            <button class="btn btn-primary" onclick="exportExcelFiltered()">Descargar Excel</button>
           </div>
         </div>
         <div id="previewSection" style="display:none;margin-top:20px">
@@ -689,7 +687,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
 
         <!-- ── FIREBASE CONFIG ── -->
         <div class="cfg-card" style="margin-bottom:20px">
-          <div class="cfg-title">🔥 Firebase — cambiar proyecto</div>
+          <div class="cfg-title">Firebase — cambiar proyecto</div>
           <div class="cfg-sub">Modificar estos datos afectará a todos los usuarios.</div>
           <div class="form-grid" style="gap:12px">
             <div class="form-group"><label>API Key</label><input type="password" id="fb_apiKey"></div>
@@ -737,7 +735,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modalInvitado')">Cancelar</button>
-      <button class="btn btn-primary" onclick="agregarInvitado()">✅ Generar Acceso</button>
+      <button class="btn btn-primary" onclick="agregarInvitado()">Generar Acceso</button>
     </div>
   </div>
 </div>
@@ -750,7 +748,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
     <div style="background:var(--gray-100);border:1px dashed var(--gray-200);border-radius:10px;padding:12px;font-family:monospace;font-size:.8rem;word-break:break-all;color:var(--text-soft);cursor:pointer" id="generatedLink" onclick="copyLink()"></div>
     <p style="font-size:.75rem;color:var(--gray-400);margin-top:6px">Clic en el cuadro para copiar</p>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="copyLink()">📋 Copiar</button>
+      <button class="btn btn-secondary" onclick="copyLink()">Copiar</button>
       <button class="btn btn-primary" onclick="closeModal('modalLink')">Listo</button>
     </div>
   </div>
@@ -773,7 +771,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modalNuevoAdmin')">Cancelar</button>
-      <button class="btn btn-primary" onclick="agregarAdmin()">🔑 Generar Enlace Admin</button>
+      <button class="btn btn-primary" onclick="agregarAdmin()">Generar Enlace Admin</button>
     </div>
   </div>
 </div>
@@ -781,7 +779,7 @@ tbody td{padding:12px 16px;color:var(--text);vertical-align:middle;}
 <!-- MODAL LINK ADMIN -->
 <div class="modal-overlay" id="modalAdminLink">
   <div class="modal" style="max-width:500px">
-    <div class="modal-title">🔑 Enlace de Administrador Generado</div>
+    <div class="modal-title">Enlace de Administrador Generado</div>
     <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:.83rem;color:#92400e;margin-bottom:16px">
       ⚠️ <strong>Guardá este enlace ahora.</strong> Da acceso completo al panel de administración. Compartilo solo con la persona indicada.
     </div>
@@ -1048,7 +1046,7 @@ let tickets = {};
 let guests   = {};
 let adminUsers = {};
 let editingKey = null;
-let currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
+let currentUser = { name:'Administrador', role:'admin', email:'admin@ticketactive.com' };
 let emailCfg = JSON.parse(localStorage.getItem('tf_emailcfg') || '{}');
 let emailRecipients = JSON.parse(localStorage.getItem('tf_recipients') || '[]');
 let emailLogArr = JSON.parse(localStorage.getItem('tf_emaillog') || '[]');
@@ -1075,7 +1073,7 @@ function bootApp(role) {
   }
 
   if (role === 'admin') {
-    currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
+    currentUser = { name:'Administrador', role:'admin', email:'admin@ticketactive.com' };
     _bootAdminUI();
     return;
   }
@@ -1645,3 +1643,4 @@ if (!fbCfg) {
 </script>
 </body>
 </html>
+
