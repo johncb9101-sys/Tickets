@@ -1222,8 +1222,8 @@ function editTicket(key){
       <div class="form-group"><label>Prioridad</label><select id="eP">${['Urgente','Alta','Media','Baja'].map(p=>`<option${p===t.prioridad?' selected':''}>${p}</option>`).join('')}</select></div>
       <div class="form-group"><label>Estado actual: ${staBadge(t.estado)}</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
-          ${t.estado!=='En Progreso'?`<button class="btn btn-sm btn-secondary" onclick="prepararCambioEstado('En Progreso')">⚙️ Poner En Progreso</button>`:''}
-          ${t.estado!=='Cerrado'?`<button class="btn btn-sm btn-secondary" onclick="prepararCambioEstado('Cerrado')">✅ Cerrar Ticket</button>`:''}
+          ${t.estado!=='En Progreso'?`<button class="btn btn-sm btn-secondary" onclick="prepararCambioEstado('En Progreso')">En Progreso</button>`:''}
+          ${t.estado!=='Cerrado'?`<button class="btn btn-sm btn-secondary" onclick="prepararCambioEstado('Cerrado')">Cerrar Ticket</button>`:''}
         </div>
       </div>
       ${t.observacion?`<div class="obs-badge"><span class="obs-label">📝 Obs. Admin:</span> ${esc(t.observacion)}</div>`:''}
