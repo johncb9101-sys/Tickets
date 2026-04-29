@@ -960,7 +960,7 @@ let tickets = {};
 let guests   = {};
 let adminUsers = {};
 let editingKey = null;
-let currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
+let currentUser = { name:'Administrador', role:'admin', email:'admin@ticketactive.com' };
 let emailCfg = JSON.parse(localStorage.getItem('tf_emailcfg') || '{}');
 let emailRecipients = JSON.parse(localStorage.getItem('tf_recipients') || '[]');
 let emailLogArr = JSON.parse(localStorage.getItem('tf_emaillog') || '[]');
@@ -987,7 +987,7 @@ function bootApp(role) {
   }
 
   if (role === 'admin') {
-    currentUser = { name:'Administrador', role:'admin', email:'admin@ticketflow.com' };
+    currentUser = { name:'Administrador', role:'admin', email:'admin@ticketactive.com' };
     _bootAdminUI();
     return;
   }
